@@ -17,10 +17,10 @@
 **
 ** * * * * * * * * * * * * * * * * * * */
 
-#include "PIResponse.h"
+#include "EduMFAResponse.h"
 #include "Logger.h"
 
-bool PIResponse::IsPushAvailable()
+bool EduMFAResponse::IsPushAvailable()
 {
 	for (auto& challenge : challenges)
 	{
@@ -32,7 +32,7 @@ bool PIResponse::IsPushAvailable()
 	return false;
 }
 
-bool PIResponse::isAuthenticationSuccessful() const
+bool EduMFAResponse::isAuthenticationSuccessful() const
 {
 	if (authenticationStatus == AuthenticationStatus::ACCEPT)
 	{
@@ -45,7 +45,7 @@ bool PIResponse::isAuthenticationSuccessful() const
 	return false;
 }
 
-std::string PIResponse::GetPushMessage()
+std::string EduMFAResponse::GetPushMessage()
 {
 	for (auto& challenge : challenges)
 	{
@@ -57,7 +57,7 @@ std::string PIResponse::GetPushMessage()
 	return "";
 }
 
-std::optional<FIDOSignRequest> PIResponse::GetFIDOSignRequest()
+std::optional<FIDOSignRequest> EduMFAResponse::GetFIDOSignRequest()
 {
 	std::optional<FIDOSignRequest> ret = std::nullopt;
 
@@ -77,7 +77,7 @@ std::optional<FIDOSignRequest> PIResponse::GetFIDOSignRequest()
 		targetType = "passkey";
 		if (hasWebAuthn)
 		{
-			PIDebug("WARNING: Received mixed webauthn and passkey challenges. The webauthn challenges will not be used.");
+			EDUMFADebug("WARNING: Received mixed webauthn and passkey challenges. The webauthn challenges will not be used.");
 		}
 	}
 	else if (hasWebAuthn)
@@ -124,7 +124,7 @@ std::optional<FIDOSignRequest> PIResponse::GetFIDOSignRequest()
 	if (baseRequestInitialized && !baseRequest.challenge.empty())
 	{
 		// Overwrite credentials with the accumulated list
-		// Note: Passkeys typically have empty lists here (unless triggered as token), 
+		// Note: Passkeys typically have empty lists here (unless triggered as token),
 		// but 'insert' handles empty/non-empty correctly regardless.
 		baseRequest.allowCredentials = accumulatedCredentials;
 		ret = baseRequest;
@@ -150,7 +150,7 @@ std::string Concatenate(std::vector<std::string> vec)
 	return msg;
 }
 
-std::string PIResponse::GetFIDOMessage()
+std::string EduMFAResponse::GetFIDOMessage()
 {
 	if (challenges.empty())
 	{
@@ -168,7 +168,7 @@ std::string PIResponse::GetFIDOMessage()
 	return Concatenate(messages);
 }
 
-std::string PIResponse::GetNonFIDOMessage()
+std::string EduMFAResponse::GetNonFIDOMessage()
 {
 	if (challenges.empty())
 	{
@@ -186,21 +186,21 @@ std::string PIResponse::GetNonFIDOMessage()
 	return Concatenate(messages);
 }
 
-bool PIResponse::IsVersionHigherOrEqual(int major, int minor, int patch) const
+bool EduMFAResponse::IsVersionHigherOrEqual(int major, int minor, int patch) const
 {
-	if (privacyIDEAVersionMajor > major)
+	if (eduMFAVersionMajor > major)
 	{
 		return true;
 	}
-	else if (privacyIDEAVersionMajor == major)
+	else if (eduMFAVersionMajor == major)
 	{
-		if (privacyIDEAVersionMinor > minor)
+		if (eduMFAVersionMinor > minor)
 		{
 			return true;
 		}
-		else if (privacyIDEAVersionMinor == minor)
+		else if (eduMFAVersionMinor == minor)
 		{
-			return privacyIDEAVersionPatch >= patch;
+			return eduMFAVersionPatch >= patch;
 		}
 	}
 	return false;

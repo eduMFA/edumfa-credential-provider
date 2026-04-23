@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="Convert.cpp" />
@@ -6,8 +6,8 @@
     <ClCompile Include="JsonParser.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="OfflineHandler.cpp" />
-    <ClCompile Include="PIResponse.cpp" />
-    <ClCompile Include="PrivacyIDEA.cpp" />
+    <ClCompile Include="EduMFAResponse.cpp" />
+    <ClCompile Include="EduMFA.cpp" />
     <ClCompile Include="RegistryReader.cpp" />
     <ClCompile Include="FIDODevice.cpp">
       <Filter>FIDO</Filter>
@@ -22,9 +22,9 @@
     <ClInclude Include="Logger.h" />
     <ClInclude Include="OfflineData.h" />
     <ClInclude Include="OfflineHandler.h" />
-    <ClInclude Include="PIConfig.h" />
-    <ClInclude Include="PIResponse.h" />
-    <ClInclude Include="PrivacyIDEA.h" />
+    <ClInclude Include="EduMFAConfig.h" />
+    <ClInclude Include="EduMFAResponse.h" />
+    <ClInclude Include="EduMFA.h" />
     <ClInclude Include="RegistryReader.h" />
     <ClInclude Include="AuthenticationStatus.h" />
     <ClInclude Include="FIDODevice.h">

@@ -4,6 +4,7 @@
 **
 ** Copyright	2012 Dominik Pretzsch
 **				2025 NetKnights GmbH
+**				2026 Helsinki Systems GmbH
 **
 ** Author		Dominik Pretzsch
 **				Nils Behlen
@@ -29,19 +30,19 @@
 
   <?define ProviderRegistryGUID = "7BAF541E-F8E0-4EDF-B69A-BD2771139E8E" ?>
   <?define ProviderFilterRegistryGUID = "34065473-D75F-4BC2-9782-E98E63ED0D41" ?>
-  
-  <?define BaseProductName = "PrivacyIDEA Credential Provider" ?>
-  <?define Manufacturer = "Netknights GmbH" ?>
-  
-  <?define Publisher = "Netknights GmbH" ?>
-  <?define AppURLInfoAbout = "http://www.privacyidea.org" ?>
-  
-  <?define ProductFolderName = "PrivacyIDEA Credential Provider" ?>
-  <?define SimpleProductName = "PrivacyIDEA-CP" ?>
+
+  <?define BaseProductName = "eduMFA Credential Provider" ?>
+  <?define Manufacturer = "Helsinki Systems GmbH" ?>
+
+  <?define Publisher = "Helsinki Systems GmbH" ?>
+  <?define AppURLInfoAbout = "http://edumfa.io" ?>
+
+  <?define ProductFolderName = "eduMFA Credential Provider" ?>
+  <?define SimpleProductName = "eduMFA-CP" ?>
 
   <!-- Locales files in ProgramData -->
   <?define PlatformProgramDataFolder = "CommonAppDataFolder" ?>
-	
+
   <?if $(var.Platform) = x64 ?>
     <?define ProductName = "$(var.BaseProductName) $(var.Version) (64 bit)" ?>
     <?define Win64 = "yes" ?>

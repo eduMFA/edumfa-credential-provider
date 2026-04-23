@@ -1,7 +1,7 @@
 #define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
 
 #include "Translator.h"
-#include <codecvt> 
+#include <codecvt>
 #include <fstream>
 #include <locale>
 #include <Logger.h>
@@ -31,10 +31,10 @@ void Translator::SetLanguage(const std::string& language)
 {
 	std::string languageOnly = GetLanguageFromLocale(language);
 	std::string region = GetRegionFromLocale(language);
-	
+
 	// This lock also covers LoadTranslations() calls
 	std::unique_lock<std::shared_mutex> lock(_mutex);
-	
+
 	_translations.clear();
 
 	// Always load English as the base layer foundation
@@ -122,7 +122,7 @@ bool Translator::LoadTranslations(const std::string& locale)
 
 	if (!file.is_open())
 	{
-		PIDebug("Translation file not found: " + filePath);
+		EDUMFADebug("Translation file not found: " + filePath);
 		return false;
 	}
 
@@ -134,11 +134,11 @@ bool Translator::LoadTranslations(const std::string& locale)
 	catch (const std::exception& e)
 	{
 		UNREFERENCED_PARAMETER(e);
-		PIError("Error parsing translation file: " + filePath);
+		EDUMFAError("Error parsing translation file: " + filePath);
 		return false;
 	}
 
-	PIDebug("Merging translations from " + filePath);
+	EDUMFADebug("Merging translations from " + filePath);
 
 	for (auto it = data.begin(); it != data.end(); ++it)
 	{
@@ -148,7 +148,7 @@ bool Translator::LoadTranslations(const std::string& locale)
 			_translations[key] = Convert::ToWString(value);
 		}
 		catch (...) {
-			PIError("Invalid key in translation file: " + it.key());
+			EDUMFAError("Invalid key in translation file: " + it.key());
 		}
 	}
 	return true;

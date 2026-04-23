@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "scenario.h"
 #include "guid.h"
-#include "PrivacyIDEA.h"
+#include "EduMFA.h"
 #include "Convert.h"
 #include "Translator.h"
 #include <stdexcept>
@@ -24,20 +24,20 @@ HRESULT Utilities::KerberosLogon(
 	__in std::wstring password,
 	__in std::wstring domain)
 {
-	PIDebug(string(__FUNCTION__) + " - Packing Credential with: ");
+	EDUMFADebug(string(__FUNCTION__) + " - Packing Credential with: ");
 
 	HRESULT hr = S_OK;
 
 	if (domain.empty())
 	{
-		PIDebug("Domain is empty, getting ComputerName");
+		EDUMFADebug("Domain is empty, getting ComputerName");
 		domain = Utilities::ComputerName();
 	}
 
-	PIDebug(L"Username: " + username);
-	PIDebug(L"Password: " + (password.empty() ? L"empty password" :
+	EDUMFADebug(L"Username: " + username);
+	EDUMFADebug(L"Password: " + (password.empty() ? L"empty password" :
 		(_config->piconfig.logPasswords ? password : L"hidden but has value")));
-	PIDebug(L"Domain: " + domain);
+	EDUMFADebug(L"Domain: " + domain);
 
 	if (!domain.empty())
 	{
@@ -92,7 +92,7 @@ HRESULT Utilities::KerberosChangePassword(
 	__in std::wstring passwordNew,
 	__in std::wstring domain)
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 	KERB_CHANGEPASSWORD_REQUEST kcpr;
 	ZeroMemory(&kcpr, sizeof(kcpr));
 
@@ -111,11 +111,11 @@ HRESULT Utilities::KerberosChangePassword(
 		bGetCompName = GetComputerNameW(wsz, &cch);
 	}
 
-	PIDebug(L"User: " + username);
-	PIDebug(L"Domain: " + wstring(wsz));
-	PIDebug(L"Pw old: " + (_config->piconfig.logPasswords ? passwordOld :
+	EDUMFADebug(L"User: " + username);
+	EDUMFADebug(L"Domain: " + wstring(wsz));
+	EDUMFADebug(L"Pw old: " + (_config->piconfig.logPasswords ? passwordOld :
 		(passwordOld.empty() ? L"no value" : L"hidden but has value")));
-	PIDebug(L"Pw new: " + (_config->piconfig.logPasswords ? passwordNew :
+	EDUMFADebug(L"Pw new: " + (_config->piconfig.logPasswords ? passwordNew :
 		(passwordNew.empty() ? L"no value" : L"hidden but has value")));
 
 	if (!domain.empty() || bGetCompName)
@@ -167,7 +167,7 @@ HRESULT Utilities::CredPackAuthentication(
 	__in std::wstring domain)
 {
 
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 
 	const DWORD credPackFlags = _config->provider.credPackFlags;
 	PWSTR pwzProtectedPassword;
@@ -179,7 +179,7 @@ HRESULT Utilities::CredPackAuthentication(
 
 	if (domain.empty())
 	{
-		PIDebug("Domain is empty, getting ComputerName");
+		EDUMFADebug("Domain is empty, getting ComputerName");
 		bGetCompName = GetComputerNameW(wsz, &cch);
 	}
 	if (bGetCompName)
@@ -194,15 +194,15 @@ HRESULT Utilities::CredPackAuthentication(
 
 		if (SUCCEEDED(hr))
 		{
-			PIDebug(L"User and Domain:" + wstring(domainUsername));
-			PIDebug(L"Password:");
+			EDUMFADebug(L"User and Domain:" + wstring(domainUsername));
+			EDUMFADebug(L"Password:");
 			if (_config->piconfig.logPasswords)
 			{
-				PIDebug(password.c_str());
+				EDUMFADebug(password.c_str());
 			}
 			else
 			{
-				PIDebug("Logging of passwords is disabled.");
+				EDUMFADebug("Logging of passwords is disabled.");
 			}
 			DWORD size = 0;
 			BYTE* rawbits = NULL;
@@ -265,7 +265,7 @@ HRESULT Utilities::Clear(
 	ICredentialProviderCredentialEvents* pcpce,
 	char clear)
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 
 	HRESULT hr = S_OK;
 
@@ -309,7 +309,7 @@ HRESULT Utilities::SetFieldStatePairBatch(
 	__in ICredentialProviderCredentialEvents* pCPCE,
 	__in const FIELD_STATE_PAIR* pFSP)
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 
 	HRESULT hr = S_OK;
 
@@ -339,7 +339,7 @@ HRESULT Utilities::InitializeField(
 	const int hide_fullname = _config->hideFullName;
 	const int hide_domainname = _config->hideDomainName;
 
-	wstring loginText = PITranslate(TEXT_LOGIN_TEXT);
+	wstring loginText = EDUMFATranslate(TEXT_LOGIN_TEXT);
 	wstring user_name = _config->credential.username;
 	wstring domain_name = _config->credential.domain;
 	wstring text;
@@ -370,7 +370,7 @@ HRESULT Utilities::InitializeField(
 	{
 		if (_config->showDomainHint)
 		{
-			text = PITranslate(TEXT_DOMAIN_HINT) + _config->credential.domain;
+			text = EDUMFATranslate(TEXT_DOMAIN_HINT) + _config->credential.domain;
 		}
 		hr = SHStrDupW(text.c_str(), &rgFieldStrings[fieldIndex]);
 		break;
@@ -378,7 +378,7 @@ HRESULT Utilities::InitializeField(
 	case FID_USERNAME:
 	{
 		hr = SHStrDupW((user_name.empty() ? L"" : user_name.c_str()), &rgFieldStrings[fieldIndex]);
-		//PIDebug(L"Setting username: " + wstring(rgFieldStrings[field_index]));
+		//EDUMFADebug(L"Setting username: " + wstring(rgFieldStrings[field_index]));
 		break;
 	}
 	case FID_LARGE_TEXT:
@@ -390,9 +390,9 @@ HRESULT Utilities::InitializeField(
 		}
 		else
 		{
-			hr = SHStrDupW(L"privacyIDEA Login", &rgFieldStrings[fieldIndex]);
+			hr = SHStrDupW(L"eduMFA Login", &rgFieldStrings[fieldIndex]);
 		}
-		//PIDebug(L"Setting large text: " + wstring(rgFieldStrings[fieldIndex]));
+		//EDUMFADebug(L"Setting large text: " + wstring(rgFieldStrings[fieldIndex]));
 		break;
 	}
 	case FID_SMALL_TEXT:
@@ -429,7 +429,7 @@ HRESULT Utilities::InitializeField(
 		{
 			hr = SHStrDupW(L"", &rgFieldStrings[fieldIndex]);
 		}
-		//PIDebug(L"Setting small text: " + wstring(rgFieldStrings[fieldIndex]));
+		//EDUMFADebug(L"Setting small text: " + wstring(rgFieldStrings[fieldIndex]));
 		break;
 	}
 	/*case FID_LOGO:
@@ -439,12 +439,12 @@ HRESULT Utilities::InitializeField(
 	}*/
 	case FID_RESET_LINK:
 	{
-		hr = SHStrDupW(PITranslate(TEXT_RESET_LINK).c_str(), &rgFieldStrings[fieldIndex]);
+		hr = SHStrDupW(EDUMFATranslate(TEXT_RESET_LINK).c_str(), &rgFieldStrings[fieldIndex]);
 		break;
 	}
 	case FID_FIDO_ONLINE:
 	{
-		hr = SHStrDupW(PITranslate(TEXT_USE_ONLINE_FIDO).c_str(), &rgFieldStrings[fieldIndex]);
+		hr = SHStrDupW(EDUMFATranslate(TEXT_USE_ONLINE_FIDO).c_str(), &rgFieldStrings[fieldIndex]);
 		break;
 	}
 	default:
@@ -458,7 +458,7 @@ HRESULT Utilities::InitializeField(
 
 HRESULT Utilities::CopyInputFields()
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 	switch (_config->provider.cpu)
 	{
 	case CPUS_LOGON:
@@ -486,11 +486,11 @@ HRESULT Utilities::CopyInputFields()
 HRESULT Utilities::CopyPasswordChangeFields()
 {
 	_config->credential.password = _config->provider.field_strings[FID_PASSWORD];
-	PIDebug(L"Old pw: " + _config->credential.password);
+	EDUMFADebug(L"Old pw: " + _config->credential.password);
 	_config->credential.newPassword1 = _config->provider.field_strings[FID_NEW_PASS_1];
-	PIDebug(L"new pw1: " + _config->credential.newPassword1);
+	EDUMFADebug(L"new pw1: " + _config->credential.newPassword1);
 	_config->credential.newPassword2 = _config->provider.field_strings[FID_NEW_PASS_2];
-	PIDebug(L"New pw2: " + _config->credential.newPassword2);
+	EDUMFADebug(L"New pw2: " + _config->credential.newPassword2);
 	return S_OK;
 }
 
@@ -502,7 +502,7 @@ HRESULT Utilities::CopyUsernameField()
 		input = wstring(_config->provider.field_strings[FID_USERNAME]);
 	}
 
-	PIDebug(L"Copying user and domain from GUI: '" + input + L"'");
+	EDUMFADebug(L"Copying user and domain from GUI: '" + input + L"'");
 	wstring username, domain;
 
 	Utilities::SplitUserAndDomain(input, username, domain);
@@ -515,22 +515,22 @@ HRESULT Utilities::CopyUsernameField()
 	if (!username.empty())
 	{
 		wstring newUsername(username);
-		PIDebug(L"Changing user from '" + _config->credential.username + L"' to '" + newUsername + L"'");
+		EDUMFADebug(L"Changing user from '" + _config->credential.username + L"' to '" + newUsername + L"'");
 		_config->credential.username = newUsername;
 	}
 	else
 	{
-		PIDebug(L"Username is empty, keeping old value: '" + _config->credential.username + L"'");
+		EDUMFADebug(L"Username is empty, keeping old value: '" + _config->credential.username + L"'");
 	}
 
 	if (!domain.empty())
 	{
-		PIDebug(L"Changing domain from '" + _config->credential.domain + L"' to '" + domain + L"'");
+		EDUMFADebug(L"Changing domain from '" + _config->credential.domain + L"' to '" + domain + L"'");
 		_config->credential.domain = domain;
 	}
 	else
 	{
-		PIDebug(L"Domain is empty, keeping old value: '" + _config->credential.domain + L"'");
+		EDUMFADebug(L"Domain is empty, keeping old value: '" + _config->credential.domain + L"'");
 	}
 
 	return S_OK;
@@ -542,26 +542,26 @@ HRESULT Utilities::CopyPasswordField()
 
 	if (newPassword.empty())
 	{
-		PIDebug("New password empty, keeping old value");
+		EDUMFADebug("New password empty, keeping old value");
 	}
 	else
 	{
 		_config->credential.password = newPassword;
 
-		PIDebug(L"Copying password from GUI, value:");
+		EDUMFADebug(L"Copying password from GUI, value:");
 		if (_config->piconfig.logPasswords)
 		{
-			PIDebug(newPassword.c_str());
+			EDUMFADebug(newPassword.c_str());
 		}
 		else
 		{
 			if (newPassword.empty())
 			{
-				PIDebug("[Hidden] empty value");
+				EDUMFADebug("[Hidden] empty value");
 			}
 			else
 			{
-				PIDebug("[Hidden] has value");
+				EDUMFADebug("[Hidden] has value");
 			}
 		}
 	}
@@ -571,7 +571,7 @@ HRESULT Utilities::CopyPasswordField()
 HRESULT Utilities::CopyOTPField()
 {
 	wstring newOTP(_config->provider.field_strings[FID_OTP]);
-	PIDebug(L"Loading OTP from GUI, from '" + _config->credential.otp + L"' to '" + newOTP + L"'");
+	EDUMFADebug(L"Loading OTP from GUI, from '" + _config->credential.otp + L"' to '" + newOTP + L"'");
 	_config->credential.otp = newOTP;
 
 	return S_OK;
@@ -582,11 +582,11 @@ HRESULT Utilities::CopyWANPinField()
 	std::wstring pin(_config->provider.field_strings[FID_FIDO_PIN]);
 	if (pin.empty())
 	{
-		PIDebug("New PIN empty, keeping old value");
+		EDUMFADebug("New PIN empty, keeping old value");
 	}
 	else
 	{
-		PIDebug(L"Copying PIN from GUI");
+		EDUMFADebug(L"Copying PIN from GUI");
 		_config->credential.fido2PIN = pin;
 	}
 	return S_OK;
@@ -605,7 +605,7 @@ std::wstring Utilities::ComputerName()
 	}
 	else
 	{
-		PIDebug("Failed to retrieve computer name: " + to_string(GetLastError()));
+		EDUMFADebug("Failed to retrieve computer name: " + to_string(GetLastError()));
 	}
 	return ret;
 }
@@ -644,4 +644,3 @@ bool Utilities::CheckForUPN(const std::wstring& input) noexcept
 {
 	return input.find(L"@") != string::npos && input.find(L"\\") == string::npos;
 }
-

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# privacyIDEA Credential Provider documentation build configuration file, created by
+# eduMFA Credential Provider documentation build configuration file, created by
 # sphinx-quickstart on Tue Jun  7 16:25:49 2016.
 #
 # This file is execfile()d with the current directory set to its
@@ -43,8 +43,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'privacyIDEA Credential Provider'
-copyright = u'2015 LastSquirrel IT. 2018, NetKnights GmbH.'
+project = u'eduMFA Credential Provider'
+copyright = u'2015 LastSquirrel IT. 2018, NetKnights GmbH., Helsinki Systems GmbH'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -176,7 +176,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'privacyIDEACredentialProviderdoc'
+htmlhelp_basename = 'eduMFACredentialProviderdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -196,8 +196,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'privacyIDEACredentialProvider.tex', u'privacyIDEA Credential Provider Documentation',
-   u'NetKnights GmbH', 'manual'),
+  ('index', 'eduMFACredentialProvider.tex', u'eduMFA Credential Provider Documentation',
+   u'Helsinki Systems GmbH', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -226,8 +226,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'privacyideacredentialprovider', u'privacyIDEA Credential Provider',
-     [u'NetKnights GmbH'], 1)
+    ('index', 'edumfacredentialprovider', u'eduMFA Credential Provider',
+     [u'Helsinki Systems GmbH'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -240,8 +240,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'privacyIDEACredentialProvider', u'privacyIDEA Credential Provider',
-   u'NetKnights GmbH', 'privacyIDEACredentialProvider', 'One line description of project.',
+  ('index', 'eduMFACredentialProvider', u'eduMFA Credential Provider',
+   u'Helsinki Systems GmbH', 'eduMFACredentialProvider', 'One line description of project.',
    'Miscellaneous'),
 ]
 

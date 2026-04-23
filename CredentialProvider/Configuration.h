@@ -1,6 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * *
 **
 ** Copyright 2025 NetKnights GmbH
+** Copyright 2026 Helsinki Systems GmbH
 ** Author: Nils Behlen
 **
 **    Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,11 +16,11 @@
 **    See the License for the specific language governing permissions and
 **    limitations under the License.
 **
-** * * * * * * * * * * * * * * * * * * */
+** * * * * * * * * * * * * * * * * * * * */
 
 #pragma once
-#include "PIConfig.h"
-#include "PIResponse.h"
+#include "EduMFAConfig.h"
+#include "EduMFAResponse.h"
 #include "Mode.h"
 #include <credentialprovider.h>
 
@@ -56,7 +57,7 @@ public:
 
 	std::string ValidateAcceptLanguage(std::wstring configEntry);
 
-	PIConfig piconfig;
+	EduMFAConfig piconfig;
 
 	template<typename... Modes>
 	bool IsModeOneOf(Modes... modes) const noexcept
@@ -73,7 +74,7 @@ public:
 		case Mode::USERNAME:						return "USERNAME";
 		case Mode::PASSWORD:						return "PASSWORD";
 		case Mode::USERNAMEPASSWORD:				return "USERNAMEPASSWORD";
-		case Mode::PRIVACYIDEA:						return "PRIVACYIDEA";
+		case Mode::EDUMFA:							return "EDUMFA";
 		case Mode::SEC_KEY_ANY:						return "SEC_KEY_ANY";
 		case Mode::PASSKEY:							return "PASSKEY";
 		case Mode::SEC_KEY_REG:						return "SEC_KEY_REG";
@@ -159,8 +160,8 @@ public:
 
 	// Save the last response and the last response with challenge, in case lastResponse is an error/fail to be able
 	// to show the challenges again
-	std::optional<PIResponse> lastResponse;
-	std::optional<PIResponse> lastResponseWithChallenge;
+	std::optional<EduMFAResponse> lastResponse;
+	std::optional<EduMFAResponse> lastResponseWithChallenge;
 	std::string lastTransactionId = "";
 
 	std::wstring excludedAccount = L"";
@@ -168,7 +169,7 @@ public:
 	std::wstring exludedGroupNetBIOSaddress = L"";
 
 	bool clearFields = true;
-	bool bypassPrivacyIDEA = false;
+	bool bypassEduMFA = false;
 
 	// Offline
 	int offlineTreshold = 20;
@@ -230,7 +231,7 @@ public:
 
 		std::wstring newPassword1 = L"";
 		std::wstring newPassword2 = L"";
-		
+
 		// Force explicit default construction
 		CREDENTIAL() = default;
 

@@ -1,6 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * *
 **
 ** Copyright	2025 NetKnights GmbH
+** Copyright	2026 Helsinki Systems GmbH
 ** Author:		Nils Behlen
 **
 **    Licensed under the Apache License, Version 2.0 (the "License");
@@ -58,13 +59,13 @@ OfflineHandler::OfflineHandler(const std::wstring& filePath, int tryWindow, int 
 	_expirationDays = expirationDays;
 
 	// Load the offline file
-	// Since _expirationDays is now set, LoadFromFile -> AddOfflineData will 
+	// Since _expirationDays is now set, LoadFromFile -> AddOfflineData will
 	// correctly calculate expiration for legacy items (value 0) during this call.
 	const HRESULT hr = LoadFromFile();
 
 	if (hr == S_OK)
 	{
-		PIDebug("Offline data loaded successfully!");
+		EDUMFADebug("Offline data loaded successfully!");
 
 		// Check for expired items and remove them on startup
 		if (deleteDays > 0)
@@ -75,11 +76,11 @@ OfflineHandler::OfflineHandler(const std::wstring& filePath, int tryWindow, int 
 	else if (hr == ERROR_FILE_NOT_FOUND)
 	{
 		// File not found can be ignored as it is expected when not using offline OTPs yet
-		PIDebug("No offline file found at " + Convert::ToString(_filePath));
+		EDUMFADebug("No offline file found at " + Convert::ToString(_filePath));
 	}
 	else
 	{
-		PIDebug(L"Unable to load offline file: " + to_wstring(hr) + L": " + getErrorText(hr));
+		EDUMFADebug(L"Unable to load offline file: " + to_wstring(hr) + L": " + getErrorText(hr));
 	}
 }
 
@@ -88,7 +89,7 @@ OfflineHandler::~OfflineHandler()
 	const HRESULT hr = SaveToFile();
 	if (hr != S_OK)
 	{
-		PIDebug(L"Unable to save offline file: " + to_wstring(hr) + L": " + getErrorText(hr));
+		EDUMFADebug(L"Unable to save offline file: " + to_wstring(hr) + L": " + getErrorText(hr));
 	}
 }
 
@@ -99,7 +100,7 @@ HRESULT OfflineHandler::VerifyOfflineOTP(const std::wstring& otp, const std::str
 	{
 		if (!item.isWebAuthn() && Convert::ToUpperCase(item.username) == Convert::ToUpperCase(username))
 		{
-			PIDebug("Trying token " + item.serial);
+			EDUMFADebug("Trying token " + item.serial);
 			const int lowestKey = item.GetLowestKey();
 			int matchingKey = lowestKey;
 
@@ -135,14 +136,14 @@ HRESULT OfflineHandler::VerifyOfflineOTP(const std::wstring& otp, const std::str
 						count++;
 					}
 				}
-				PIDebug("Offline authentication success with token " + item.serial + ", removing " + to_string(count) + " offline OTPs.");
+				EDUMFADebug("Offline authentication success with token " + item.serial + ", removing " + to_string(count) + " offline OTPs.");
 				serialUsed = item.serial;
 				// If success, stop trying other dataSets
 				break;
 			}
 			else if (success == E_FAIL)
 			{
-				PIDebug("Offline authentication failed with token " + item.serial + ". The given OTP was not in the range of tested values!");
+				EDUMFADebug("Offline authentication failed with token " + item.serial + ". The given OTP was not in the range of tested values!");
 			}
 		}
 	}
@@ -156,13 +157,13 @@ HRESULT OfflineHandler::GetRefillToken(const std::string& username, const std::s
 	{
 		if (Convert::ToUpperCase(item.username) == Convert::ToUpperCase(username) && item.serial == serial)
 		{
-			if (item.refilltoken.empty()) return PI_OFFLINE_NO_OFFLINE_DATA;
+			if (item.refilltoken.empty()) return EDUMFA_OFFLINE_NO_OFFLINE_DATA;
 			refilltoken = string(item.refilltoken);
 			return S_OK;
 		}
 	}
 
-	return PI_OFFLINE_NO_OFFLINE_DATA;
+	return EDUMFA_OFFLINE_NO_OFFLINE_DATA;
 }
 
 HRESULT OfflineHandler::AddOfflineData(const OfflineData& data)
@@ -170,7 +171,7 @@ HRESULT OfflineHandler::AddOfflineData(const OfflineData& data)
 	OfflineData dataToAdd = data;
 
 	// Set initial expiration for new data
-	// (Unless it was loaded from file, in which case expiration is already set. 
+	// (Unless it was loaded from file, in which case expiration is already set.
 	// We can check if data.expiration is 0, but for fresh enrollments it is 0).
 	if (dataToAdd.expiration == 0)
 	{
@@ -182,7 +183,7 @@ HRESULT OfflineHandler::AddOfflineData(const OfflineData& data)
 	{
 		if (Convert::ToUpperCase(existing.username) == Convert::ToUpperCase(data.username) && existing.serial == data.serial)
 		{
-			PIDebug("Offline: Updating exsisting user data for " + data.username + " and token " + data.serial);
+			EDUMFADebug("Offline: Updating exsisting user data for " + data.username + " and token " + data.serial);
 			existing.refilltoken = data.refilltoken;
 			existing.expiration = dataToAdd.expiration;
 			for (const auto& newOTP : data.offlineOTPs)
@@ -196,7 +197,7 @@ HRESULT OfflineHandler::AddOfflineData(const OfflineData& data)
 	if (!done)
 	{
 		_dataSets.push_back(dataToAdd);
-		PIDebug("Offline: Adding new data for " + dataToAdd.username + " and token " + dataToAdd.serial);
+		EDUMFADebug("Offline: Adding new data for " + dataToAdd.username + " and token " + dataToAdd.serial);
 	}
 
 	return S_OK;
@@ -238,7 +239,7 @@ std::vector<OfflineData> OfflineHandler::GetFIDODataFor(const std::string& usern
 		{
 			if (!includeExpired && IsExpired(item))
 			{
-				PIDebug("Skipping expired offline token: " + item.serial);
+				EDUMFADebug("Skipping expired offline token: " + item.serial);
 				continue;
 			}
 			ret.push_back(item);
@@ -276,11 +277,11 @@ void OfflineHandler::Prune(int days)
 	time_t now = time(nullptr);
 	if (now <= 0)
 	{
-		PIDebug("Prune: System clock appears corrupted (time <= 0). Aborting cleanup.");
+		EDUMFADebug("Prune: System clock appears corrupted (time <= 0). Aborting cleanup.");
 		return;
 	}
 
-	PIDebug("Running offline credential cleanup. Purge threshold: " + to_string(days) + " days.");
+	EDUMFADebug("Running offline credential cleanup. Purge threshold: " + to_string(days) + " days.");
 
 	size_t initialSize = _dataSets.size();
 
@@ -300,7 +301,7 @@ void OfflineHandler::Prune(int days)
 				// Ensure the expiration is actually in the past
 				if (secondsPastExpiration > 0 && secondsPastExpiration > secondsAllowed)
 				{
-					PIDebug("Removing stale credential " + item.serial + " (Expired " + to_string((int)(secondsPastExpiration / 86400.0)) + " days ago)");
+					EDUMFADebug("Removing stale credential " + item.serial + " (Expired " + to_string((int)(secondsPastExpiration / 86400.0)) + " days ago)");
 					return true;
 				}
 				return false;
@@ -311,7 +312,7 @@ void OfflineHandler::Prune(int days)
 	// Only save if we actually deleted something
 	if (_dataSets.size() < initialSize)
 	{
-		PIDebug("Removed " + to_string(initialSize - _dataSets.size()) + " stale credentials.");
+		EDUMFADebug("Removed " + to_string(initialSize - _dataSets.size()) + " stale credentials.");
 		SaveToFile();
 	}
 }
@@ -330,7 +331,7 @@ bool OfflineHandler::RemoveOfflineData(const std::string& username, const std::s
 
 	if (!found)
 	{
-		PIDebug("Offline: No data to remove for " + username + " and token " + serial);
+		EDUMFADebug("Offline: No data to remove for " + username + " and token " + serial);
 	}
 
 	return found;
@@ -394,7 +395,7 @@ HRESULT OfflineHandler::LoadFromFile()
 		ifs.close();
 	}
 
-	if (fileContent.empty()) return PI_OFFLINE_FILE_EMPTY;
+	if (fileContent.empty()) return EDUMFA_OFFLINE_FILE_EMPTY;
 
 	JsonParser parser;
 	auto vec = parser.ParseFileContentsForOfflineData(fileContent);
@@ -431,7 +432,7 @@ bool OfflineHandler::PBKDF2SHA512Verify(std::wstring password, std::string store
 	}
 	catch (const invalid_argument& e)
 	{
-		PIDebug(e.what());
+		EDUMFADebug(e.what());
 	}
 	// $algorithm
 	string algorithm = GetNextValue(storedValue);
@@ -451,7 +452,7 @@ bool OfflineHandler::PBKDF2SHA512Verify(std::wstring password, std::string store
 	std::string utf8Password = Convert::ToString(password);
 	SecureString securePassword(utf8Password);
 
-	// securePassword.len includes the null terminator. 
+	// securePassword.len includes the null terminator.
 	// strnlen_s did not include the null terminator, so we subtract 1 to match the exact byte count.
 	const int cbPassword = static_cast<int>(securePassword.len - 1);
 	BYTE* pbPassword = reinterpret_cast<BYTE*>(securePassword.get());
@@ -473,7 +474,7 @@ bool OfflineHandler::PBKDF2SHA512Verify(std::wstring password, std::string store
 	PUCHAR pbDerivedKey = (unsigned char*)CoTaskMemAlloc(sizeof(unsigned char) * cbDerivedKey);
 	if (pbDerivedKey == nullptr)
 	{
-		PIError("Could not allocate memory for derived key.");
+		EDUMFAError("Could not allocate memory for derived key.");
 		return false;
 	}
 
@@ -511,7 +512,7 @@ bool OfflineHandler::PBKDF2SHA512Verify(std::wstring password, std::string store
 	}
 	else
 	{
-		PIDebug("PBKDF2 Error: " + to_string(status));
+		EDUMFADebug("PBKDF2 Error: " + to_string(status));
 		isValid = false;
 	}
 

@@ -1,7 +1,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 **
 ** Copyright	2012 Dominik Pretzsch
-**				2025 NetKnights GmbH
+**						2025 NetKnights GmbH
+**						2026 Helsinki Systems GmbH
 **
 ** Author		Dominik Pretzsch
 **				Nils Behlen
@@ -31,14 +32,14 @@
 #define VERSION_MINOR               8
 #define VERSION_BUILD               0
 #define VERSION_REVISION            0
- 
-#define VER_FILE_DESCRIPTION_STR    "privacyIDEA Credential Provider for Windows logon"
+
+#define VER_FILE_DESCRIPTION_STR    "eduMFA Credential Provider for Windows logon"
 #define VER_FILE_VERSION            VERSION_MAJOR, VERSION_MINOR, VERSION_BUILD, VERSION_REVISION
 #define VER_FILE_VERSION_STR        STRINGIZE(VERSION_MAJOR)        \
                                     "." STRINGIZE(VERSION_MINOR)    \
                                     "." STRINGIZE(VERSION_BUILD)    \
                                     "." STRINGIZE(VERSION_REVISION) \
- 
-#define VER_PRODUCTNAME_STR         "privacyIDEA CredentialProvider"
+
+#define VER_PRODUCTNAME_STR         "eduMFA CredentialProvider"
 
 #endif

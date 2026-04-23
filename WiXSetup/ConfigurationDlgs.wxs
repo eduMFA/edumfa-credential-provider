@@ -3,7 +3,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 **
 ** Copyright	2012 Dominik Pretzsch
-**				    2017 NetKnights GmbH
+**				2017 NetKnights GmbH
+**				2026 Helsinki Systems GmbH
 **
 ** Author		  Dominik Pretzsch
 **				    Nils Behlen
@@ -77,10 +78,10 @@ When the UPN is sent, the realm is omitted.</Text>
                 <Control Id="V1BitmapPathLabel" Type="Text" X="20" Y="52" Width="200" Height="15" TabSkip="no" Text="&amp;Login Tile Image (*.bmp - 128px X 128px): (optional)" />
                 <Control Id="V1BitmapPathEdit" Type="Edit" X="20" Y="71" Width="200" Height="15" Property="V1_BITMAP_PATH" Text="{1024}" />
                 <Control Type="CheckBox" Id="UsernamePassword" Width="194" Height="17" X="20" Y="105" CheckBoxValue="1" Property="USERNAME_PASSWORD" Text="Prompt for username and password in first step" />
-                <Control Id="TwoStepSendPassword" Type="CheckBox" X="20" Y="120" Width="220" Height="17" Property="TWO_STEP_SEND_PASSWORD" CheckBoxValue="1" Text="Send domain password to privacyIDEA.">
+                <Control Id="TwoStepSendPassword" Type="CheckBox" X="20" Y="120" Width="220" Height="17" Property="TWO_STEP_SEND_PASSWORD" CheckBoxValue="1" Text="Send domain password to eduMFA.">
                     <Publish Property="TWO_STEP_SEND_EMPTY_PASSWORD" Value="{}" Order="1">TWO_STEP_SEND_PASSWORD</Publish>
                 </Control>
-                <Control Id="TwoStepSendEmptyPassword" Type="CheckBox" X="20" Y="135" Width="220" Height="17" Property="TWO_STEP_SEND_EMPTY_PASSWORD" CheckBoxValue="1" Text="Send empty password to privacyIDEA.">
+                <Control Id="TwoStepSendEmptyPassword" Type="CheckBox" X="20" Y="135" Width="220" Height="17" Property="TWO_STEP_SEND_EMPTY_PASSWORD" CheckBoxValue="1" Text="Send empty password to eduMFA.">
                     <Publish Property="TWO_STEP_SEND_PASSWORD" Value="{}" Order="1">TWO_STEP_SEND_EMPTY_PASSWORD</Publish>
                 </Control>
                 <Control Type="CheckBox" Id="HideFirstStepResponseError" Width="208" Height="17" X="35" Y="150" CheckBoxValue="1" Text="Hide response message of first step when failed" Property="HIDE_FIRST_STEP_RESPONSE_ERROR" />
@@ -260,7 +261,7 @@ Set the remaining offline OTPs at which refill should be attempted:" />
                 <Control Type="Text" Id="DocLabel" Width="278" Height="21" X="20" Y="172" Text="{\Tahoma_Bold}The settings can be adjusted in the registry after installation.
 Check the documentation for all available options:" />
                 <Control Id="DocumentationLink" Type="Hyperlink" X="20" Y="195" Width="100" Height="20" Transparent="no" Text="Documentation">
-                    <Text><![CDATA[<a href="https://privacyidea-credential-provider.readthedocs.io/en/latest/configuration.html">Documentation</a>]]></Text>
+                    <Text><![CDATA[<a href="https://edumfa-credential-provider.readthedocs.io/en/latest/configuration.html">Documentation</a>]]></Text>
                 </Control>
                 <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="&amp;Back">
                     <Publish Event="NewDialog" Value="OfflineDlg">1</Publish>

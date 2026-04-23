@@ -102,7 +102,7 @@ public:
 	/// <param name="config"></param>
 	/// <returns>bool if upn detected, false otherwise</returns>
 	static bool CheckForUPN(const std::wstring& input) noexcept;
-	
+
 	HRESULT CopyInputFields();
 
 	HRESULT CopyUsernameField();

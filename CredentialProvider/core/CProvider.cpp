@@ -1,7 +1,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 **
 ** Copyright	2012 Dominik Pretzsch
-**				2017 NetKnights GmbH
+**						2017 NetKnights GmbH
+**						2026 Helsinki Systems GmbH
 **
 ** Author		Dominik Pretzsch
 **				Nils Behlen
@@ -48,7 +49,7 @@ CProvider::~CProvider()
 {
 	if (_credential != NULL)
 	{
-		PIDebug("CProvider destructor - releasing credential");
+		EDUMFADebug("CProvider destructor - releasing credential");
 		_credential->Release();
 	}
 	DllRelease();
@@ -56,7 +57,7 @@ CProvider::~CProvider()
 
 void CProvider::_CleanupSetSerialization()
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 
 
 	if (_pkiulSetSerialization)
@@ -72,7 +73,7 @@ void CProvider::_CleanupSetSerialization()
 }
 
 // SetUsageScenario is the provider's cue that it's going to be asked for tiles
-// in a subsequent call.  
+// in a subsequent call.
 //
 // This sample only handles the logon and unlock scenarios as those are the most common.
 HRESULT CProvider::SetUsageScenario(
@@ -80,7 +81,7 @@ HRESULT CProvider::SetUsageScenario(
 	__in DWORD dwFlags
 )
 {
-	PIDebug(std::string(__FUNCTION__) + ": " + Shared::CPUStoString(cpus) + " - AUTHENTICATION START");
+	EDUMFADebug(std::string(__FUNCTION__) + ": " + Shared::CPUStoString(cpus) + " - AUTHENTICATION START");
 	if (Logger::Get().logDebug)
 	{
 		_config->LogConfig();
@@ -105,7 +106,7 @@ HRESULT CProvider::SetUsageScenario(
 	{
 		if (dwFlags & info.flag)
 		{
-			PIDebug(std::string("dwFlags contains: ") + info.name);
+			EDUMFADebug(std::string("dwFlags contains: ") + info.name);
 		}
 	}
 
@@ -134,12 +135,12 @@ HRESULT CProvider::SetUsageScenario(
 	{
 		if (!Shared::IsRequiredForScenario(cpus, PROVIDER))
 		{
-			PIDebug("CP is not enumerated because of the configuration for this scenario.");
+			EDUMFADebug("CP is not enumerated because of the configuration for this scenario.");
 			hr = E_NOTIMPL;
 		}
 	}
 
-	PIDebug("SetUsageScenario result: " + Convert::LongToHexString(hr));
+	EDUMFADebug("SetUsageScenario result: " + Convert::LongToHexString(hr));
 
 	return hr;
 }
@@ -151,7 +152,7 @@ HRESULT CProvider::SetUsageScenario(
 //
 // SetSerialization is called for two main scenarios.  The first scenario is in the credui case
 // where it is prepopulating a tile with credentials that the user chose to store in the OS.
-// The second situation is in a remote logon case where the remote client may wish to 
+// The second situation is in a remote logon case where the remote client may wish to
 // prepopulate a tile with a username, or in some cases, completely populate the tile and
 // use it to logon without showing any UI.
 //
@@ -161,14 +162,14 @@ HRESULT CProvider::SetSerialization(
 	__in const CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION* pcpcs
 )
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 	HRESULT hr = E_NOTIMPL;
 	ULONG authPackage = NULL;
 	hr = RetrieveNegotiateAuthPackage(&authPackage);
 
 	if (!SUCCEEDED(hr))
 	{
-		PIDebug("Failed to retrieve authPackage");
+		EDUMFADebug("Failed to retrieve authPackage");
 		return hr;
 	}
 
@@ -177,13 +178,13 @@ HRESULT CProvider::SetSerialization(
 		if (((_config->provider.credPackFlags & CREDUIWIN_IN_CRED_ONLY) || (_config->provider.credPackFlags & CREDUIWIN_AUTHPACKAGE_ONLY))
 			&& authPackage != pcpcs->ulAuthenticationPackage)
 		{
-			PIDebug("authPackage invalid");
+			EDUMFADebug("authPackage invalid");
 			return E_INVALIDARG;
 		}
 
 		if (_config->provider.credPackFlags & CREDUIWIN_AUTHPACKAGE_ONLY)
 		{
-			PIDebug("CPUS_CREDUI but not CREDUIWIN_AUTHPACKAGE_ONLY");
+			EDUMFADebug("CPUS_CREDUI but not CREDUIWIN_AUTHPACKAGE_ONLY");
 			hr = S_FALSE;
 		}
 	}
@@ -197,7 +198,7 @@ HRESULT CProvider::SetSerialization(
 			{
 				BYTE* nativeSerialization = nullptr;
 				DWORD nativeSerializationSize = 0;
-				PIDebug("Serialization found from remote");
+				EDUMFADebug("Serialization found from remote");
 
 				if (_config->provider.credPackFlags == CPUS_CREDUI && (_config->provider.credPackFlags & CREDUIWIN_PACK_32_WOW))
 				{
@@ -233,7 +234,7 @@ HRESULT CProvider::SetSerialization(
 			}
 		}
 	}
-	PIDebug("SetSerialization result: " + Convert::LongToHexString(hr));
+	EDUMFADebug("SetSerialization result: " + Convert::LongToHexString(hr));
 
 	return hr;
 }
@@ -245,7 +246,7 @@ HRESULT CProvider::Advise(
 	__in UINT_PTR upAdviseContext
 )
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 
 	if (_config->provider.pCredentialProviderEvents != nullptr)
 	{
@@ -263,8 +264,8 @@ HRESULT CProvider::Advise(
 // Called by LogonUI when the ICredentialProviderEvents callback is no longer valid.
 HRESULT CProvider::UnAdvise()
 {
-	PIDebug(std::string(__FUNCTION__) + " - AUTHENTICATION END");
-	
+	EDUMFADebug(std::string(__FUNCTION__) + " - AUTHENTICATION END");
+
 	if (_config->provider.pCredentialProviderEvents != nullptr)
 	{
 		_config->provider.pCredentialProviderEvents->Release();
@@ -272,7 +273,7 @@ HRESULT CProvider::UnAdvise()
 
 	_config->provider.pCredentialProviderEvents = nullptr;
 	_config->provider.upAdviseContext = NULL;
-	
+
 	if (_credential)
 	{
 		_credential->FullReset();
@@ -284,13 +285,13 @@ HRESULT CProvider::UnAdvise()
 // does mean that all your tiles must have the same number of fields.
 // This number must include both visible and invisible fields. If you want a tile
 // to have different fields from the other tiles you enumerate for a given usage
-// scenario you must include them all in this count and then hide/show them as desired 
+// scenario you must include them all in this count and then hide/show them as desired
 // using the field descriptors.
 HRESULT CProvider::GetFieldDescriptorCount(
 	__out DWORD* pdwCount
 )
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 
 	*pdwCount = FID_NUM_FIELDS;
 
@@ -303,7 +304,7 @@ HRESULT CProvider::GetFieldDescriptorAt(
 	__deref_out CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR** ppcpfd
 )
 {
-	//PIDebugLn(__FUNCTION__);
+	//EDUMFADebugLn(__FUNCTION__);
 	HRESULT hr = E_FAIL;
 	if (!_config->provider.cpu)
 	{
@@ -318,28 +319,28 @@ HRESULT CProvider::GetFieldDescriptorAt(
 		switch (dwIndex)
 		{
 			case FID_USERNAME:
-				label = PITranslate(TEXT_USERNAME);
+				label = EDUMFATranslate(TEXT_USERNAME);
 				break;
 			case FID_PASSWORD:
-				label = PITranslate(TEXT_PASSWORD);
+				label = EDUMFATranslate(TEXT_PASSWORD);
 				break;
 			case FID_NEW_PASS_1:
-				label = PITranslate(TEXT_NEW_PASSWORD);
+				label = EDUMFATranslate(TEXT_NEW_PASSWORD);
 				break;
 			case FID_NEW_PASS_2:
-				label = PITranslate(TEXT_CONFIRM_PASSWORD);
+				label = EDUMFATranslate(TEXT_CONFIRM_PASSWORD);
 				break;
 			case FID_OTP:
-				label = PITranslate(TEXT_OTP_FIELD);
+				label = EDUMFATranslate(TEXT_OTP_FIELD);
 				break;
 			case FID_FIDO_PIN:
-				label = PITranslate(TEXT_FIDO_PIN_HINT);
+				label = EDUMFATranslate(TEXT_FIDO_PIN_HINT);
 				break;
 			case FID_NEW_PIN_1:
-				label = PITranslate(TEXT_NEW_PIN_HINT);
+				label = EDUMFATranslate(TEXT_NEW_PIN_HINT);
 				break;
 			case FID_NEW_PIN_2:
-				label = PITranslate(TEXT_NEW_PIN_REPEAT_HINT);
+				label = EDUMFATranslate(TEXT_NEW_PIN_REPEAT_HINT);
 				break;
 			default: break;
 		}
@@ -362,7 +363,7 @@ HRESULT CProvider::GetFieldDescriptorAt(
 // Sets pdwCount to the number of tiles that we wish to show at this time.
 // Sets pdwDefault to the index of the tile which should be used as the default.
 //
-// The default tile is the tile which will be shown in the zoomed view by default. If 
+// The default tile is the tile which will be shown in the zoomed view by default. If
 // more than one provider specifies a default tile the behavior is the last used cred
 // prov gets to specify the default tile to be displayed
 //
@@ -375,7 +376,7 @@ HRESULT CProvider::GetCredentialCount(
 	__out BOOL* pbAutoLogonWithDefault
 )
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 
 	*pdwCount = 1;
 	*pdwDefault = 0; // this means we want to be the default
@@ -393,7 +394,7 @@ HRESULT CProvider::GetCredentialCount(
 		&& _SerializationAvailable(SERIALIZATION_AVAILABLE::FOR_PASSWORD)
 		&& _config->provider.cpu != CPUS_CREDUI)
 	{
-		PIDebug("Setting AutoLogon to true");
+		EDUMFADebug("Setting AutoLogon to true");
 		*pdwDefault = 0;
 		*pbAutoLogonWithDefault = TRUE;
 	}
@@ -407,14 +408,14 @@ HRESULT CProvider::GetCredentialAt(
 	__deref_out ICredentialProviderCredential** ppcpc
 )
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 
 	HRESULT hr = E_FAIL;
 	const CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus = _config->provider.cpu;
 
 	if (!_credential)
 	{
-		PIDebug("Checking if already serialized credentials are present");
+		EDUMFADebug("Checking if already serialized credentials are present");
 
 		PWSTR serializedUser, serializedPass, serializedDomain;
 		_GetSerializedCredentials(&serializedUser, &serializedPass, &serializedDomain);
@@ -423,7 +424,7 @@ HRESULT CProvider::GetCredentialAt(
 		{
 			if (serializedUser == nullptr)
 			{
-				PIDebug("Looking-up missing user name from session");
+				EDUMFADebug("Looking-up missing user name from session");
 
 				DWORD dwLen = 0;
 
@@ -439,7 +440,7 @@ HRESULT CProvider::GetCredentialAt(
 
 			if (serializedDomain == nullptr)
 			{
-				PIDebug("Looking-up missing domain name from session");
+				EDUMFADebug("Looking-up missing domain name from session");
 
 				DWORD dwLen = 0;
 
@@ -457,20 +458,20 @@ HRESULT CProvider::GetCredentialAt(
 		{
 			if (serializedDomain == nullptr)
 			{
-				PIDebug("Getting missing domain from NetSetup...");
+				EDUMFADebug("Getting missing domain from NetSetup...");
 
 				NETSETUP_JOIN_STATUS join_status;
 
-				if (!NetGetJoinInformation(nullptr, &serializedDomain, &join_status) == NERR_Success 
+				if (!NetGetJoinInformation(nullptr, &serializedDomain, &join_status) == NERR_Success
 					|| join_status == NetSetupUnjoined || join_status == NetSetupUnknownStatus)
 				{
 					serializedDomain = nullptr;
 				}
-				PIDebug(L"Found domain: " + std::wstring(serializedDomain));
+				EDUMFADebug(L"Found domain: " + std::wstring(serializedDomain));
 			}
 		}
 
-		PIDebug("Initializing CCredential");
+		EDUMFADebug("Initializing CCredential");
 		_credential = std::make_unique<CCredential>(_config);
 
 		const FIELD_STATE_PAIR* pfsp = nullptr;
@@ -495,17 +496,17 @@ HRESULT CProvider::GetCredentialAt(
 
 	if (FAILED(hr))
 	{
-		PIDebug("Credential initialization failed");
+		EDUMFADebug("Credential initialization failed");
 		return hr;
 	}
 
 	if (!_credential)
 	{
-		PIDebug("Credential instantiation failed");
+		EDUMFADebug("Credential instantiation failed");
 		return E_OUTOFMEMORY;
 	}
 
-	PIDebug("Returning interface to credential");
+	EDUMFADebug("Returning interface to credential");
 
 	if ((dwIndex == 0) && ppcpc)
 	{
@@ -516,7 +517,7 @@ HRESULT CProvider::GetCredentialAt(
 		hr = E_INVALIDARG;
 	}
 
-	PIDebug("GetCredentialAt result " + Convert::LongToHexString(hr));
+	EDUMFADebug("GetCredentialAt result " + Convert::LongToHexString(hr));
 
 	return hr;
 }
@@ -524,7 +525,7 @@ HRESULT CProvider::GetCredentialAt(
 // Boilerplate code to create our provider.
 HRESULT CSample_CreateInstance(__in REFIID riid, __deref_out void** ppv)
 {
-	//PIDebug(__FUNCTION__);
+	//EDUMFADebug(__FUNCTION__);
 	HRESULT hr = S_OK;
 
 	CProvider* pProvider = new CProvider();
@@ -538,15 +539,15 @@ HRESULT CSample_CreateInstance(__in REFIID riid, __deref_out void** ppv)
 	{
 		hr = E_OUTOFMEMORY;
 	}
-	//PIDebug("CSample_CreateInstance Result:");
-	//PIDebug(hr);
+	//EDUMFADebug("CSample_CreateInstance Result:");
+	//EDUMFADebug(hr);
 
 	return hr;
 }
 
 void CProvider::_GetSerializedCredentials(PWSTR* username, PWSTR* password, PWSTR* domain)
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 
 	if (username)
 	{
@@ -590,13 +591,13 @@ void CProvider::_GetSerializedCredentials(PWSTR* username, PWSTR* password, PWST
 
 bool CProvider::_SerializationAvailable(SERIALIZATION_AVAILABLE checkFor)
 {
-	//PIDebug(__FUNCTION__);
+	//EDUMFADebug(__FUNCTION__);
 
 	bool result = false;
 
 	if (!_pkiulSetSerialization)
 	{
-		//PIDebug("No serialized creds set");
+		//EDUMFADebug("No serialized creds set");
 	}
 	else
 	{

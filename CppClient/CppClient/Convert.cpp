@@ -109,7 +109,7 @@ std::vector<unsigned char> Convert::Base64Decode(const std::string& base64String
 	unsigned char char_array_4[4]{};
 	unsigned char char_array_3[3]{};
 
-	while (in_len-- && (base64String[in_] != '=') && (isalnum(base64String[in_]) 
+	while (in_len-- && (base64String[in_] != '=') && (isalnum(base64String[in_])
 		|| (base64String[in_] == '+') || (base64String[in_] == '/')))
 	{
 		char_array_4[i++] = base64String[in_];
@@ -120,7 +120,7 @@ std::vector<unsigned char> Convert::Base64Decode(const std::string& base64String
 			{
 				char_array_4[i] = base64_chars.find(char_array_4[i]);
 			}
-				
+
 			char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
 			char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
 			char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
@@ -129,7 +129,7 @@ std::vector<unsigned char> Convert::Base64Decode(const std::string& base64String
 			{
 				decoded_data.push_back(char_array_3[i]);
 			}
-				
+
 			i = 0;
 		}
 	}
@@ -194,7 +194,7 @@ std::string Convert::Base64Encode(const unsigned char* data, const size_t size, 
 			{
 				encoded_string += base64_chars[char_array_4[i]];
 			}
-				
+
 			i = 0;
 		}
 	}
@@ -215,7 +215,7 @@ std::string Convert::Base64Encode(const unsigned char* data, const size_t size, 
 		{
 			encoded_string += base64_chars[char_array_4[j]];
 		}
-			
+
 		if (padded)
 		{
 			while (i++ < 3)

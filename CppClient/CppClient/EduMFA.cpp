@@ -1,6 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * *
 **
 ** Copyright 2025 NetKnights GmbH
+** Copyright 2026 Helsinki Systems GmbH
 ** Author: Nils Behlen
 **
 **    Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,9 +16,9 @@
 **    See the License for the specific language governing permissions and
 **    limitations under the License.
 **
-** * * * * * * * * * * * * * * * * * * */
+** * * * * * * * * * * * * * * * * * * * */
 
-#include "PrivacyIDEA.h"
+#include "EduMFA.h"
 #include "Challenge.h"
 #include "Convert.h"
 #include <thread>
@@ -29,7 +30,7 @@ using namespace std;
 constexpr int POLL_THREAD_TIMEOUT_SECONDS = 300; // 5 minutes
 constexpr int POLL_THREAD_SLEEP_MILLISECONDS = 500;
 
-std::optional<FIDOSignRequest> PrivacyIDEA::GetOfflineFIDOSignRequest()
+std::optional<FIDOSignRequest> EduMFA::GetOfflineFIDOSignRequest()
 {
 	std::optional<FIDOSignRequest> ret = std::nullopt;
 
@@ -58,7 +59,7 @@ std::optional<FIDOSignRequest> PrivacyIDEA::GetOfflineFIDOSignRequest()
 }
 
 // Check if there is a mapping for the given domain or - if not - a default realm is set
-HRESULT PrivacyIDEA::AppendRealm(std::wstring domain, std::map<std::string, std::string>& parameters)
+HRESULT EduMFA::AppendRealm(std::wstring domain, std::map<std::string, std::string>& parameters)
 {
 	wstring realm = L"";
 	try
@@ -83,7 +84,7 @@ HRESULT PrivacyIDEA::AppendRealm(std::wstring domain, std::map<std::string, std:
 	return S_OK;
 }
 
-HRESULT PrivacyIDEA::EvaluateResponse(std::string response, _Inout_ PIResponse& responseObj)
+HRESULT EduMFA::EvaluateResponse(std::string response, _Inout_ EduMFAResponse& responseObj)
 {
 	auto offlineData = _parser.ParseResponseForOfflineData(response);
 	if (!offlineData.empty())
@@ -97,14 +98,14 @@ HRESULT PrivacyIDEA::EvaluateResponse(std::string response, _Inout_ PIResponse& 
 	return hr;
 }
 
-void PrivacyIDEA::PollThread(
+void EduMFA::PollThread(
 	const std::wstring& username,
 	const std::wstring& domain,
 	const std::wstring& upn,
 	const std::string& transactionId,
-	std::function<void(const PIResponse&)> callback)
+	std::function<void(const EduMFAResponse&)> callback)
 {
-	PIDebug("Starting poll thread...");
+	EDUMFADebug("Starting poll thread...");
 	bool success = false;
 	this_thread::sleep_for(chrono::milliseconds(300));
 	int maxIterations = POLL_THREAD_TIMEOUT_SECONDS * 1000 / POLL_THREAD_SLEEP_MILLISECONDS;
@@ -119,36 +120,36 @@ void PrivacyIDEA::PollThread(
 		this_thread::sleep_for(chrono::milliseconds(POLL_THREAD_SLEEP_MILLISECONDS));
 		maxIterations--;
 	}
-	PIDebug("Polling stopped" + string((maxIterations == 0 ? " because of timeout" : "")));
+	EDUMFADebug("Polling stopped" + string((maxIterations == 0 ? " because of timeout" : "")));
 	// Only finalize if there was success while polling. If the authentication finishes otherwise, the polling is stopped without finalizing.
 	if (success)
 	{
-		PIDebug("Finalizing transaction...");
-		PIResponse pir;
+		EDUMFADebug("Finalizing transaction...");
+		EduMFAResponse pir;
 		HRESULT hr = ValidateCheck(username, domain, L"", pir, transactionId, upn);
 		if (FAILED(hr))
 		{
-			PIDebug("/validate/check failed with " + to_string(hr));
+			EDUMFADebug("/validate/check failed with " + to_string(hr));
 		}
 		callback(pir);
 	}
 }
 
-PrivacyIDEA::~PrivacyIDEA()
+EduMFA::~EduMFA()
 {
 	StopPoll();
 }
 
-HRESULT PrivacyIDEA::ValidateCheck(
+HRESULT EduMFA::ValidateCheck(
 	const std::wstring& username,
 	const std::wstring& domain,
 	const std::wstring& otp,
-	PIResponse& responseObj,
+	EduMFAResponse& responseObj,
 	const std::string& transactionId,
 	const std::wstring& upn,
 	const std::map<std::string, std::string>& headers)
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 	string strOTP = Convert::ToString(otp);
 
 	map<string, string> parameters =
@@ -160,7 +161,7 @@ HRESULT PrivacyIDEA::ValidateCheck(
 	if (_config.sendUPN && !upn.empty())
 	{
 		string strUPN = Convert::ToString(upn);
-		PIDebug("Sending UPN " + strUPN);
+		EDUMFADebug("Sending UPN " + strUPN);
 		parameters.try_emplace("user", strUPN);
 	}
 	else
@@ -174,19 +175,19 @@ HRESULT PrivacyIDEA::ValidateCheck(
 	{
 		parameters.try_emplace("transaction_id", transactionId);
 	}
-	string response = SendRequestWithFallback(PI_ENDPOINT_VALIDATE_CHECK, parameters, headers, RequestMethod::POST);
+	string response = SendRequestWithFallback(EDUMFA_ENDPOINT_VALIDATE_CHECK, parameters, headers, RequestMethod::POST);
 
 	// If the response is empty, there was an error in the endpoint
 	if (response.empty())
 	{
-		PIDebug("Response was empty. Endpoint error: " + Convert::LongToHexString(_endpoint.GetLastErrorCode()));
+		EDUMFADebug("Response was empty. Endpoint error: " + Convert::LongToHexString(_endpoint.GetLastErrorCode()));
 		return _endpoint.GetLastErrorCode();
 	}
 
 	return EvaluateResponse(response, responseObj);
 }
 
-std::string PrivacyIDEA::SendRequestWithFallback(
+std::string EduMFA::SendRequestWithFallback(
 	const std::string& endpoint,
 	const std::map<std::string, std::string>& parameters,
 	const std::map<std::string, std::string>& headers,
@@ -197,7 +198,7 @@ std::string PrivacyIDEA::SendRequestWithFallback(
 	// Just check for hostname since path and port are optional
 	if (response.empty() && !_config.fallbackHostname.empty() && _endpoint.hostname != _config.fallbackHostname)
 	{
-		PIError(L"Primary host failed to respond, switching to fallback host: " + _config.fallbackHostname + L" for the rest of the authentication.");
+		EDUMFAError(L"Primary host failed to respond, switching to fallback host: " + _config.fallbackHostname + L" for the rest of the authentication.");
 		_endpoint.hostname = _config.fallbackHostname;
 		_endpoint.path = _config.fallbackPath;
 		_endpoint.port = _config.fallbackPort;
@@ -206,13 +207,13 @@ std::string PrivacyIDEA::SendRequestWithFallback(
 	return response;
 }
 
-HRESULT PrivacyIDEA::ValidateCheckFIDO(
+HRESULT EduMFA::ValidateCheckFIDO(
 	const std::wstring& username,
-	const std::wstring& domain, 
-	const FIDOAssertionData& fidoAssertion, 
+	const std::wstring& domain,
+	const FIDOAssertionData& fidoAssertion,
 	std::string clientData,
 	const std::string& origin,
-	PIResponse& responseObj,
+	EduMFAResponse& responseObj,
 	const std::string& transactionId,
 	const std::wstring& upn)
 {
@@ -222,7 +223,7 @@ HRESULT PrivacyIDEA::ValidateCheckFIDO(
 	if (_config.sendUPN && !upn.empty())
 	{
 		string strUPN = Convert::ToString(upn);
-		PIDebug("Sending UPN " + strUPN);
+		EDUMFADebug("Sending UPN " + strUPN);
 		parameters.try_emplace("user", strUPN);
 	}
 	else
@@ -242,8 +243,8 @@ HRESULT PrivacyIDEA::ValidateCheckFIDO(
 	}
 	else
 	{
-		PIError("Unable to send FIDOSignResponse without transactionId!");
-		return PI_ERROR_WRONG_PARAMETER;
+		EDUMFAError("Unable to send FIDOSignResponse without transactionId!");
+		return EDUMFA_ERROR_WRONG_PARAMETER;
 	}
 
 	// Add FIDO parameters, each member of the response is a parameter
@@ -256,26 +257,26 @@ HRESULT PrivacyIDEA::ValidateCheckFIDO(
 
 	map<string, string> headers = { { "Origin", origin } };
 
-	string response = SendRequestWithFallback(PI_ENDPOINT_VALIDATE_CHECK, parameters, headers, RequestMethod::POST);
+	string response = SendRequestWithFallback(EDUMFA_ENDPOINT_VALIDATE_CHECK, parameters, headers, RequestMethod::POST);
 
 	// If the response is empty, there was an error in the endpoint
 	if (response.empty())
 	{
-		PIDebug("Response was empty. Endpoint error: " + Convert::LongToHexString(_endpoint.GetLastErrorCode()));
+		EDUMFADebug("Response was empty. Endpoint error: " + Convert::LongToHexString(_endpoint.GetLastErrorCode()));
 		return _endpoint.GetLastErrorCode();
 	}
 
 	return EvaluateResponse(response, responseObj);
 }
 
-HRESULT PrivacyIDEA::ValidateCheckCompletePasskeyRegistration(
+HRESULT EduMFA::ValidateCheckCompletePasskeyRegistration(
 	const std::string& transactionId,
 	const std::string& serial,
 	const std::wstring& username,
 	const std::wstring& domain,
 	FIDORegistrationResponse registrationResponse,
 	const std::string& origin,
-	PIResponse& piresponse)
+	EduMFAResponse& piresponse)
 {
 	map<string, string> parameters = {
 		{"user", Convert::ToString(username)},
@@ -291,36 +292,36 @@ HRESULT PrivacyIDEA::ValidateCheckCompletePasskeyRegistration(
 	AppendRealm(domain, parameters);
 	map<string, string> headers = { { "Origin", origin } };
 
-	string response = SendRequestWithFallback(PI_ENDPOINT_VALIDATE_CHECK, parameters, headers, RequestMethod::POST);
+	string response = SendRequestWithFallback(EDUMFA_ENDPOINT_VALIDATE_CHECK, parameters, headers, RequestMethod::POST);
 
 	return EvaluateResponse(response, piresponse);
 }
 
-HRESULT PrivacyIDEA::ValidateInitialize(PIResponse& response, const std::string& type)
+HRESULT EduMFA::ValidateInitialize(EduMFAResponse& response, const std::string& type)
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 	map<string, string> parameters = { { "type", type } };
-	string r = SendRequestWithFallback(PI_ENDPOINT_VALIDATE_INITIALIZE, parameters, {}, RequestMethod::POST);
+	string r = SendRequestWithFallback(EDUMFA_ENDPOINT_VALIDATE_INITIALIZE, parameters, {}, RequestMethod::POST);
 	return EvaluateResponse(r, response);
 }
 
 /*!
 
-@return PI_OFFLINE_NO_OFFLINE_DATA, PI_OFFLINE_DATA_NO_OTPS_LEFT, S_OK, E_FAIL
+@return EDUMFA_OFFLINE_NO_OFFLINE_DATA, EDUMFA_OFFLINE_DATA_NO_OTPS_LEFT, S_OK, E_FAIL
 */
-HRESULT PrivacyIDEA::OfflineCheck(const std::wstring& username, const std::wstring& otp, __out std::string& serialUsed)
+HRESULT EduMFA::OfflineCheck(const std::wstring& username, const std::wstring& otp, __out std::string& serialUsed)
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 	string szUsername = Convert::ToString(username);
 
 	HRESULT hr = offlineHandler.VerifyOfflineOTP(otp, szUsername, serialUsed);
-	PIDebug("Offline verification result: " + Convert::LongToHexString(hr));
+	EDUMFADebug("Offline verification result: " + Convert::LongToHexString(hr));
 	return hr;
 }
 
-HRESULT PrivacyIDEA::OfflineRefill(const std::wstring& username, const std::wstring& lastOTP, const std::string& serial)
+HRESULT EduMFA::OfflineRefill(const std::wstring& username, const std::wstring& lastOTP, const std::string& serial)
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 	string refilltoken;
 	string szUsername = Convert::ToString(username);
 	string szLastOTP = Convert::ToString(lastOTP);
@@ -328,7 +329,7 @@ HRESULT PrivacyIDEA::OfflineRefill(const std::wstring& username, const std::wstr
 	HRESULT hr = offlineHandler.GetRefillToken(szUsername, serial, refilltoken);
 	if (hr != S_OK)
 	{
-		PIDebug("Failed to get parameters for offline refill!");
+		EDUMFADebug("Failed to get parameters for offline refill!");
 		return E_FAIL;
 	}
 
@@ -338,11 +339,11 @@ HRESULT PrivacyIDEA::OfflineRefill(const std::wstring& username, const std::wstr
 		{"serial", serial}
 	};
 
-	string response = SendRequestWithFallback(PI_ENDPOINT_OFFLINE_REFILL, parameters, map<string, string>(), RequestMethod::POST);
+	string response = SendRequestWithFallback(EDUMFA_ENDPOINT_OFFLINE_REFILL, parameters, map<string, string>(), RequestMethod::POST);
 
 	if (response.empty())
 	{
-		PIDebug("Offline refill response was empty");
+		EDUMFADebug("Offline refill response was empty");
 		return _endpoint.GetLastErrorCode();
 	}
 
@@ -354,16 +355,16 @@ HRESULT PrivacyIDEA::OfflineRefill(const std::wstring& username, const std::wstr
 	return hr;
 }
 
-HRESULT PrivacyIDEA::OfflineRefillFIDO(const std::wstring& username, const std::string& serial)
+HRESULT EduMFA::OfflineRefillFIDO(const std::wstring& username, const std::string& serial)
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 	string refilltoken;
 	string szUsername = Convert::ToString(username);
 
 	HRESULT hr = offlineHandler.GetRefillToken(szUsername, serial, refilltoken);
 	if (hr != S_OK)
 	{
-		PIDebug("Failed to get parameters for offline refill!");
+		EDUMFADebug("Failed to get parameters for offline refill!");
 		return E_FAIL;
 	}
 
@@ -373,17 +374,17 @@ HRESULT PrivacyIDEA::OfflineRefillFIDO(const std::wstring& username, const std::
 		{"pass", ""}
 	};
 
-	string response = SendRequestWithFallback(PI_ENDPOINT_OFFLINE_REFILL, parameters, map<string, string>(), RequestMethod::POST);
+	string response = SendRequestWithFallback(EDUMFA_ENDPOINT_OFFLINE_REFILL, parameters, map<string, string>(), RequestMethod::POST);
 
 	if (response.empty())
 	{
-		PIDebug("Offline refill response was empty");
+		EDUMFADebug("Offline refill response was empty");
 		return _endpoint.GetLastErrorCode();
 	}
 
 	if (!_parser.IsStillActiveOfflineToken(response))
 	{
-		PIDebug("Token " + serial + " is not marked for offline use anymore, its data is removed from this machine");
+		EDUMFADebug("Token " + serial + " is not marked for offline use anymore, its data is removed from this machine");
 		offlineHandler.RemoveOfflineData(szUsername, serial);
 	}
 	else
@@ -391,12 +392,12 @@ HRESULT PrivacyIDEA::OfflineRefillFIDO(const std::wstring& username, const std::
 		refilltoken = _parser.GetRefilltoken(response);
 		if (refilltoken.empty())
 		{
-			PIDebug("Refilltoken is empty");
+			EDUMFADebug("Refilltoken is empty");
 			return E_FAIL;
 		}
 		if (!offlineHandler.UpdateRefilltoken(serial, refilltoken))
 		{
-			PIDebug("Failed to update refilltoken for serial " + serial);
+			EDUMFADebug("Failed to update refilltoken for serial " + serial);
 			return E_FAIL;
 		}
 	}
@@ -404,9 +405,9 @@ HRESULT PrivacyIDEA::OfflineRefillFIDO(const std::wstring& username, const std::
 	return hr;
 }
 
-bool PrivacyIDEA::StopPoll()
+bool EduMFA::StopPoll()
 {
-	PIDebug("Stopping poll thread...");
+	EDUMFADebug("Stopping poll thread...");
 	_runPoll.store(false);
 	if (_workerThread.joinable()) {
 		_workerThread.join();
@@ -414,38 +415,38 @@ bool PrivacyIDEA::StopPoll()
 	return true;
 }
 
-void PrivacyIDEA::PollTransactionAsync(
+void EduMFA::PollTransactionAsync(
 	std::wstring username,
 	std::wstring domain,
 	std::wstring upn,
 	std::string transactionId,
-	std::function<void(const PIResponse&)> callback)
+	std::function<void(const EduMFAResponse&)> callback)
 {
 	StopPoll();
 	_runPoll.store(true);
-	_workerThread = std::thread(&PrivacyIDEA::PollThread, this, username, domain, upn, transactionId, callback);
+	_workerThread = std::thread(&EduMFA::PollThread, this, username, domain, upn, transactionId, callback);
 }
 
-bool PrivacyIDEA::PollTransaction(std::string transactionId)
+bool EduMFA::PollTransaction(std::string transactionId)
 {
 	map<string, string> parameters = {
 		{"transaction_id", transactionId }
 	};
 
-	string response = SendRequestWithFallback(PI_ENDPOINT_POLLTRANSACTION, parameters, map<string, string>(), RequestMethod::GET);
-	PIDebug("Polltransaction response: " + response);
+	string response = SendRequestWithFallback(EDUMFA_ENDPOINT_POLLTRANSACTION, parameters, map<string, string>(), RequestMethod::GET);
+	EDUMFADebug("Polltransaction response: " + response);
 	return _parser.ParsePollTransaction(response);
 }
 
-bool PrivacyIDEA::CancelEnrollmentViaMultichallenge(std::string transactionId)
+bool EduMFA::CancelEnrollmentViaMultichallenge(std::string transactionId)
 {
 	map<string, string> parameters = {
 		{"transaction_id", transactionId },
 		{"cancel_enrollment", "true"}
 	};
-	string response = SendRequestWithFallback(PI_ENDPOINT_VALIDATE_CHECK, parameters, map<string, string>(), RequestMethod::POST);
-	PIDebug("Cancel enrollment response: " + response);
-	PIResponse pir;
+	string response = SendRequestWithFallback(EDUMFA_ENDPOINT_VALIDATE_CHECK, parameters, map<string, string>(), RequestMethod::POST);
+	EDUMFADebug("Cancel enrollment response: " + response);
+	EduMFAResponse pir;
 	HRESULT hr = _parser.ParseResponse(response, pir);
 	if (SUCCEEDED(hr))
 	{
@@ -455,7 +456,7 @@ bool PrivacyIDEA::CancelEnrollmentViaMultichallenge(std::string transactionId)
 }
 
 
-bool PrivacyIDEA::OfflineFIDODataExistsFor(std::wstring username)
+bool EduMFA::OfflineFIDODataExistsFor(std::wstring username)
 {
 	string szUsername = Convert::ToString(username);
 	return !offlineHandler.GetFIDODataFor(szUsername).empty();

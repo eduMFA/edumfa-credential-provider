@@ -1,6 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * *
 **
 ** Copyright 2019 NetKnights GmbH
+** Copyright 2026 Helsinki Systems GmbH
 ** Author: Nils Behlen
 **
 **    Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,17 +16,17 @@
 **    See the License for the specific language governing permissions and
 **    limitations under the License.
 **
-** * * * * * * * * * * * * * * * * * * */
+** * * * * * * * * * * * * * * * * * * * */
 
 #pragma once
 
 #include "Challenge.h"
-#include "PIConfig.h"
+#include "EduMFAConfig.h"
 #include <map>
 #include <Windows.h>
 
-#define PI_ERROR_SERVER_UNAVAILABLE					((HRESULT)0x88809014)
-#define PI_ERROR_ENDPOINT_SETUP						((HRESULT)0x88809015)
+#define EDUMFA_ERROR_SERVER_UNAVAILABLE					((HRESULT)0x88809014)
+#define EDUMFA_ERROR_ENDPOINT_SETUP						((HRESULT)0x88809015)
 
 enum class RequestMethod
 {
@@ -34,9 +35,9 @@ enum class RequestMethod
 };
 
 class Endpoint
-{ 
+{
 public:
-	Endpoint(PIConfig config) : _config(config), hostname(config.hostname), path(config.path), port(config.port) {};
+	Endpoint(EduMFAConfig config) : _config(config), hostname(config.hostname), path(config.path), port(config.port) {};
 
 	std::string SendRequest(
 		const std::string& endpoint,
@@ -60,6 +61,5 @@ private:
 
 	HRESULT _lastErrorCode = 0;
 
-	PIConfig _config;
+	EduMFAConfig _config;
 };
-

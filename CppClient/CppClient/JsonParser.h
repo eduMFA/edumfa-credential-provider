@@ -15,34 +15,34 @@
 **    See the License for the specific language governing permissions and
 **    limitations under the License.
 **
-** * * * * * * * * * * * * * * * * * * */
+** * * * * * * * * * * * * * * * * * * * */
 
 #pragma once
-#include "PIResponse.h"
+#include "EduMFAResponse.h"
 #include "OfflineData.h"
 #include <string>
 #include <vector>
 #include <winerror.h>
 
-#define PI_JSON_PARSE_ERROR							((HRESULT)0x88809031)
+#define EDUMFA_JSON_PARSE_ERROR							((HRESULT)0x88809031)
 constexpr auto JSON_DUMP_INDENTATION = 4;
 
 class JsonParser
 {
 public:
 	/// <summary>
-	/// Parse the contents of a privacyIDEA response into an object.
+	/// Parse the contents of an eduMFA response into an object.
 	/// </summary>
 	/// <param name="serverResponse"></param>
 	/// <param name="responseObj"></param>
 	/// <returns>
-	/// S_OK success, 
-	/// PI_JSON_PARSE_ERROR if the input is malformed or a required field is missing
+	/// S_OK success,
+	/// EDUMFA_JSON_PARSE_ERROR if the input is malformed or a required field is missing
 	/// </returns>
-	HRESULT ParseResponse(std::string serverResponse, PIResponse &response);
+	HRESULT ParseResponse(std::string serverResponse, EduMFAResponse &response);
 
 	/// <summary>
-	/// 
+	///
 	/// </summary>
 	/// <param name="input"></param>
 	/// <returns></returns>
@@ -78,4 +78,3 @@ public:
 	/// <returns>true if still marked for offline or error, false if not</returns>
 	bool IsStillActiveOfflineToken(const std::string& input);
 };
-

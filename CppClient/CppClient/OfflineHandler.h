@@ -2,6 +2,7 @@
 /* * * * * * * * * * * * * * * * * * * * *
 **
 ** Copyright	2019 NetKnights GmbH
+** Copyright	2026 Helsinki Systems GmbH
 ** Author:		Nils Behlen
 **
 **    Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +17,7 @@
 **    See the License for the specific language governing permissions and
 **    limitations under the License.
 **
-** * * * * * * * * * * * * * * * * * * */
+** * * * * * * * * * * * * * * * * * * * */
 
 #include "OfflineData.h"
 #include <map>
@@ -25,11 +26,11 @@
 #include <optional>
 
 // 888090-2X OFFLINE
-#define PI_OFFLINE_DATA_NO_OTPS_LEFT				((HRESULT)0x88809020)
-#define PI_OFFLINE_NO_OFFLINE_DATA					((HRESULT)0x88809022) 
-#define PI_OFFLINE_FILE_DOES_NOT_EXIST				((HRESULT)0x88809023)
-#define PI_OFFLINE_FILE_EMPTY						((HRESULT)0x88809024)
-#define PI_OFFLINE_WRONG_OTP						((HRESULT)0x88809025)
+#define EDUMFA_OFFLINE_DATA_NO_OTPS_LEFT				((HRESULT)0x88809020)
+#define EDUMFA_OFFLINE_NO_OFFLINE_DATA					((HRESULT)0x88809022)
+#define EDUMFA_OFFLINE_FILE_DOES_NOT_EXIST				((HRESULT)0x88809023)
+#define EDUMFA_OFFLINE_FILE_EMPTY						((HRESULT)0x88809024)
+#define EDUMFA_OFFLINE_WRONG_OTP						((HRESULT)0x88809025)
 
 class OfflineHandler
 {
@@ -53,7 +54,7 @@ public:
 	HRESULT AddOfflineData(const OfflineData& data);
 
 	/// <summary>
-	/// Get the number of remaining offline OTPs for the user. 
+	/// Get the number of remaining offline OTPs for the user.
 	/// </summary>
 	/// <param name="username"></param>
 	/// <returns>The number of remaining offline OTP values or 0 if no data is found</returns>
@@ -72,7 +73,7 @@ public:
 
 	time_t CalculateNewExpiration() const noexcept
 	{
-		PIDebug("CalculateNewExpiration: _expirationDays is " + std::to_string(_expirationDays));
+		EDUMFADebug("CalculateNewExpiration: _expirationDays is " + std::to_string(_expirationDays));
 
 		if (_expirationDays <= 0) return 0;
 
@@ -80,7 +81,7 @@ public:
 		time_t exp = now + (_expirationDays * 24 * 60 * 60);
 
 		// Debug output of the calculated time
-		PIDebug("CalculateNewExpiration: Calculated " + std::to_string(exp) + " (Now + " + std::to_string(_expirationDays) + " days)");
+		EDUMFADebug("CalculateNewExpiration: Calculated " + std::to_string(exp) + " (Now + " + std::to_string(_expirationDays) + " days)");
 		return exp;
 	}
 
@@ -102,4 +103,3 @@ private:
 
 	HRESULT LoadFromFile();
 };
-

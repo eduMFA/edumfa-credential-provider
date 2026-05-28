@@ -18,3 +18,4 @@ lib/
 CppClient/nlohmann/json.hpp
 /libfido2-1.15.0-nfc-enabled
 UpgradeLog.htm
+doc/_build/

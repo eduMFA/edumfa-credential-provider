@@ -20,6 +20,10 @@ The Credential Provider communicates with the eduMFA authentication system via R
     - Fallback URL
 * Configurable texts
 
+### Known Issues
+
+* FIDO/WebAuthn authentication is currently broken and needs to be fixed. This is tracked in [#8](https://github.com/eduMFA/edumfa-credential-provider/issues/8).
+
 ### Documentation
 
 The documentation can be found in ``/doc``, most notably the [configuration options](https://github.com/eduMFA/edumfa-credential-provider/blob/master/doc/configuration.rst).

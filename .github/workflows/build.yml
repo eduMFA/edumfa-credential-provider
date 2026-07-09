@@ -21,56 +21,10 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1
 
-      - name: Find Visual Studio root
-        run: |
-          $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
-          Add-Content -Path $env:GITHUB_ENV -Value "VS_ROOT=$vsPath"
+      - name: Setup dependencies
+        run: pwsh ./scripts/setup-dependencies.ps1 -SolutionDir ${{ github.workspace }}
         shell: pwsh
-
-      - name: Setup VC merge modules directory
-        run: |
-          $solutionDir = "${{ github.workspace }}"
-          New-Item -ItemType Directory -Force -Path "$solutionDir\lib\merge" | Out-Null
-          $vsRoot = $env:VS_ROOT
-          $vcDir = Join-Path $vsRoot "VC\Redist\MSVC"
-          if (Test-Path $vcDir) {
-            $latestDir = Get-ChildItem $vcDir -Directory | Sort-Object Name -Descending | Select-Object -First 1
-            $mergeDir = Join-Path $latestDir.FullName "MergeModules"
-            if (Test-Path $mergeDir) {
-              Copy-Item "$mergeDir\*" -Destination "$solutionDir\lib\merge\" -Force
-              Write-Host "Copied merge modules from $mergeDir"
-            }
-          }
-        shell: pwsh
-
-      - name: Download libfido2
-        run: |
-          $solutionDir = "${{ github.workspace }}"
-          $libfido2Url = "https://developers.yubico.com/libfido2/Releases/libfido2-1.15.0-win.zip"
-          Invoke-WebRequest -Uri $libfido2Url -OutFile "libfido2.zip"
-          $tempDir = Join-Path $env:TEMP "libfido2_extract"
-          Expand-Archive -Path "libfido2.zip" -DestinationPath $tempDir -Force
-          $srcStatic = Join-Path $tempDir "libfido2-1.15.0-win\Win64\Release\v143\static"
-          $srcInclude = Join-Path $tempDir "libfido2-1.15.0-win\include"
-          $destDir = Join-Path $solutionDir "libfido2-1.15.0-nfc-enabled"
-          New-Item -ItemType Directory -Force -Path (Join-Path $destDir "static") | Out-Null
-          New-Item -ItemType Directory -Force -Path (Join-Path $destDir "include") | Out-Null
-          Copy-Item "$srcStatic\*" -Destination (Join-Path $destDir "static") -Recurse -Force
-          Copy-Item "$srcInclude\*" -Destination (Join-Path $destDir "include") -Recurse -Force
-          Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
-          Remove-Item "libfido2.zip"
-          Get-ChildItem -Path $destDir -Recurse
-        shell: pwsh
-
-      - name: Download nlohmann/json
-        run: |
-          $solutionDir = "${{ github.workspace }}"
-          $jsonUrl = "https://github.com/nlohmann/json/releases/download/v3.12.0/json.hpp"
-          $dest = Join-Path $solutionDir "CppClient\CppClient\nlohmann"
-          New-Item -ItemType Directory -Force -Path $dest | Out-Null
-          Invoke-WebRequest -Uri $jsonUrl -OutFile (Join-Path $dest "json.hpp")
-          Get-ChildItem -Path $dest -Recurse
-        shell: pwsh
+        working-directory: ${{ github.workspace }}
 
       - name: Build ${{ matrix.config }}
         run: |

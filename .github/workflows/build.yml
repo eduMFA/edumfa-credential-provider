@@ -36,3 +36,10 @@ jobs:
             /v:minimal
         shell: pwsh
         working-directory: ${{ github.workspace }}
+
+      - name: Upload WiXSetup MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: eduMFACredentialProviderSetup-${{ matrix.config }}-x64
+          path: WiXSetup/bin/x64/${{ matrix.config }}/en-us/eduMFACredentialProviderSetup.msi
+          if-no-files-found: error

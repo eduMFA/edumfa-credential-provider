@@ -1,6 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * *
 **
 ** Copyright	2025 NetKnights GmbH
+** Copyright	2026 Helsinki Systems GmbH
 ** Author:		Nils Behlen
 **
 **    Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,9 +16,9 @@
 **    See the License for the specific language governing permissions and
 **    limitations under the License.
 **
-** * * * * * * * * * * * * * * * * * * */
+** * * * * * * * * * * * * * * * * * * * */
 
-#include "PrivacyIDEA.h"
+#include "EduMFA.h"
 #include "Endpoint.h"
 #include "Logger.h"
 #include "Convert.h"
@@ -32,7 +33,7 @@
 
 using namespace std;
 
-vector<std::string> _excludedEndpoints = { PI_ENDPOINT_POLLTRANSACTION };
+vector<std::string> _excludedEndpoints = { EDUMFA_ENDPOINT_POLLTRANSACTION };
 
 HRESULT Endpoint::GetLastErrorCode()
 {
@@ -50,7 +51,7 @@ std::string Endpoint::URLEncode(const std::string& in)
 	LPSTR buf = (char*)malloc(sizeof(char) * maxLen);
 	if (buf == nullptr)
 	{
-		PIDebug("malloc fail");
+		EDUMFADebug("malloc fail");
 		return "";
 	}
 	std::string ret;
@@ -61,7 +62,7 @@ std::string Endpoint::URLEncode(const std::string& in)
 	}
 	else
 	{
-		PIError("AtlEscapeUrl Failure " + to_string(GetLastError()));
+		EDUMFAError("AtlEscapeUrl Failure " + to_string(GetLastError()));
 	}
 
 	SecureZeroMemory(buf, (sizeof(char) * maxLen));
@@ -71,7 +72,7 @@ std::string Endpoint::URLEncode(const std::string& in)
 
 std::string Endpoint::EncodeRequestParameters(const std::map<std::string, std::string>& parameters)
 {
-    PIDebug("Request parameters:");
+    EDUMFADebug("Request parameters:");
     static const std::set<std::string> noEncodeKeys = {
         "credential_id",
         "clientDataJSON",
@@ -91,11 +92,11 @@ std::string Endpoint::EncodeRequestParameters(const std::map<std::string, std::s
         ret += entry.first + "=" + encoded + "&";
         if (entry.first != "pass" || _config.logPasswords)
         {
-            PIDebug(entry.first + "=" + encoded);
+            EDUMFADebug(entry.first + "=" + encoded);
         }
         else
         {
-            PIDebug("pass parameter is not logged");
+            EDUMFADebug("pass parameter is not logged");
         }
     }
 
@@ -178,7 +179,7 @@ void CALLBACK WinHttpStatusCallback(
 					strDetail = "Unknown SECURE_FAILURE flag(s): " + std::to_string(statusFlags);
 				}
 
-				PIError("SECURE_FAILURE with status info: " + strDetail);
+				EDUMFAError("SECURE_FAILURE with status info: " + strDetail);
 			}
 			break;
 	}
@@ -187,7 +188,7 @@ void CALLBACK WinHttpStatusCallback(
 string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::string, std::string>& parameters,
 	const std::map<std::string, std::string>& headers, const RequestMethod& method)
 {
-	PIDebug(string(__FUNCTION__) + " to " + endpoint);
+	EDUMFADebug(string(__FUNCTION__) + " to " + endpoint);
 	// Prepare the parameters
 	wstring wHostname = EncodeUTF16(Convert::ToString(hostname), CP_UTF8);
 	// the api endpoint needs to be appended to the path then converted, because the "full path" is set separately in winhttp
@@ -203,11 +204,11 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 	headersCopy.try_emplace("Accept-Language", _config.acceptLanguage);
 
 #ifdef _DEBUG
-	PIDebug("Headers:");
-	PIDebug(L"User-Agent=" + _config.userAgent);
+	EDUMFADebug("Headers:");
+	EDUMFADebug(L"User-Agent=" + _config.userAgent);
 	for (auto& entry : headersCopy)
 	{
-		PIDebug(entry.first + "=" + entry.second);
+		EDUMFADebug(entry.first + "=" + entry.second);
 	}
 #endif //_DEBUG
 
@@ -236,7 +237,7 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 	if (info.dwMajorVersion == 6 && info.dwMinorVersion <= 2)
 	{
 		dwAccessType = WINHTTP_ACCESS_TYPE_DEFAULT_PROXY;
-		PIDebug("Setting access type to WINHTTP_ACCESS_TYPE_DEFAULT_PROXY");
+		EDUMFADebug("Setting access type to WINHTTP_ACCESS_TYPE_DEFAULT_PROXY");
 	}
 
 	// Use WinHttpOpen to obtain a session handle.
@@ -260,8 +261,8 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 	}
 	else
 	{
-		PIError("WinHttpOpen failure: " + to_string(GetLastError()));
-		_lastErrorCode = PI_ERROR_ENDPOINT_SETUP;
+		EDUMFAError("WinHttpOpen failure: " + to_string(GetLastError()));
+		_lastErrorCode = EDUMFA_ERROR_ENDPOINT_SETUP;
 		return "";
 	}
 
@@ -273,8 +274,8 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 	}
 	else
 	{
-		PIError("WinHttpOpenRequest failure: " + to_string(GetLastError()));
-		_lastErrorCode = PI_ERROR_ENDPOINT_SETUP;
+		EDUMFAError("WinHttpOpenRequest failure: " + to_string(GetLastError()));
+		_lastErrorCode = EDUMFA_ERROR_ENDPOINT_SETUP;
 		return "";
 	}
 
@@ -282,8 +283,8 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 	DWORD dwReqOpts = 0;
 	if (!WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, &dwReqOpts, sizeof(DWORD)))
 	{
-		PIError("WinHttpSetOption to set TLS flag failure: " + to_string(GetLastError()));
-		_lastErrorCode = PI_ERROR_ENDPOINT_SETUP;
+		EDUMFAError("WinHttpSetOption to set TLS flag failure: " + to_string(GetLastError()));
+		_lastErrorCode = EDUMFA_ERROR_ENDPOINT_SETUP;
 		return "";
 	}
 
@@ -309,8 +310,8 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 		}
 		else
 		{
-			PIError("WinHttpSetOption for SSL flags failure: " + to_string(GetLastError()));
-			_lastErrorCode = PI_ERROR_ENDPOINT_SETUP;
+			EDUMFAError("WinHttpSetOption for SSL flags failure: " + to_string(GetLastError()));
+			_lastErrorCode = EDUMFA_ERROR_ENDPOINT_SETUP;
 			return "";
 		}
 	}
@@ -319,7 +320,7 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 	// Set timeouts on the request handle
 	if (!WinHttpSetTimeouts(hRequest, _config.resolveTimeout, _config.connectTimeout, _config.sendTimeout, _config.receiveTimeout))
 	{
-		PIError("Failed to set timeouts on hRequest: " + to_string(GetLastError()));
+		EDUMFAError("Failed to set timeouts on hRequest: " + to_string(GetLastError()));
 		// Continue with defaults
 	}
 
@@ -327,7 +328,7 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 	wstring userAgent = L"User-Agent: " + _config.userAgent;
 	if (!WinHttpAddRequestHeaders(hRequest, userAgent.c_str(), (DWORD)-1L, WINHTTP_ADDREQ_FLAG_ADD))
 	{
-		PIError("Failed to add User-Agent to header!");
+		EDUMFAError("Failed to add User-Agent to header!");
 	}
 	if (!headersCopy.empty())
 	{
@@ -336,7 +337,7 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 			if (!entry.first.empty() && !WinHttpAddRequestHeaders(hRequest,	Convert::ToWString(entry.first + ": " + entry.second).c_str(),
 				(DWORD)-1L,	WINHTTP_ADDREQ_FLAG_ADD))
 			{
-				PIError("Failed to add header " + entry.first + ": " + entry.second + " to request: " + to_string(GetLastError()));
+				EDUMFAError("Failed to add header " + entry.first + ": " + entry.second + " to request: " + to_string(GetLastError()));
 			}
 		}
 	}
@@ -357,8 +358,8 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 	if (!bResults)
 	{
 		// This happens in case of timeout using offline OTP vvv will be 120002
-		PIError("WinHttpSendRequest failure: " + to_string(GetLastError()));
-		_lastErrorCode = PI_ERROR_SERVER_UNAVAILABLE;
+		EDUMFAError("WinHttpSendRequest failure: " + to_string(GetLastError()));
+		_lastErrorCode = EDUMFA_ERROR_SERVER_UNAVAILABLE;
 		return "";
 	}
 
@@ -378,7 +379,7 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 			dwSize = 0;
 			if (!WinHttpQueryDataAvailable(hRequest, &dwSize))
 			{
-				PIError("WinHttpQueryDataAvailable failure: " + to_string(GetLastError()));
+				EDUMFAError("WinHttpQueryDataAvailable failure: " + to_string(GetLastError()));
 				response = ""; //ENDPOINT_ERROR_RESPONSE_ERROR;
 			}
 
@@ -386,7 +387,7 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 			pszOutBuffer = new char[ULONGLONG(dwSize) + 1];
 			if (!pszOutBuffer)
 			{
-				PIError("WinHttpReadData out of memory: " + to_string(GetLastError()));
+				EDUMFAError("WinHttpReadData out of memory: " + to_string(GetLastError()));
 				response = ""; // ENDPOINT_ERROR_RESPONSE_ERROR;
 				dwSize = 0;
 			}
@@ -396,7 +397,7 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 				ZeroMemory(pszOutBuffer, (ULONGLONG)dwSize + 1);
 				if (!WinHttpReadData(hRequest, (LPVOID)pszOutBuffer, dwSize, &dwDownloaded))
 				{
-					PIError("WinHttpReadData error: " + to_string(GetLastError()));
+					EDUMFAError("WinHttpReadData error: " + to_string(GetLastError()));
 					response = "";// ENDPOINT_ERROR_RESPONSE_ERROR;
 				}
 				else
@@ -411,7 +412,7 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 	// Report any errors.
 	if (!bResults)
 	{
-		PIError("WinHttp Result error: " + to_string(GetLastError()));
+		EDUMFAError("WinHttp Result error: " + to_string(GetLastError()));
 		response = "";// ENDPOINT_ERROR_RESPONSE_ERROR;
 	}
 	// Close any open handles.
@@ -423,17 +424,17 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 	{
 		if (!response.empty())
 		{
-			PIDebug(JsonParser::PrettyFormatJson(response));
+			EDUMFADebug(JsonParser::PrettyFormatJson(response));
 		}
 		else
 		{
-			PIDebug("Response was empty.");
+			EDUMFADebug("Response was empty.");
 		}
 	}
 
 	if (response.empty())
 	{
-		_lastErrorCode = PI_ERROR_SERVER_UNAVAILABLE;
+		_lastErrorCode = EDUMFA_ERROR_SERVER_UNAVAILABLE;
 	}
 
 	return response;

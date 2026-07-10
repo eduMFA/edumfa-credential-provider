@@ -1,7 +1,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 **
 ** Copyright	2012 Dominik Pretzsch
-**				2017 NetKnights GmbH
+**						2017 NetKnights GmbH
+**						2026 Helsinki Systems GmbH
 **
 ** Author		Dominik Pretzsch
 **				Nils Behlen
@@ -25,7 +26,7 @@
 #include "Dll.h"
 #include "Utilities.h"
 #include "Configuration.h"
-#include "PrivacyIDEA.h"
+#include "EduMFA.h"
 #include "FIDODevice.h"
 #include <scenario.h>
 #include <unknwn.h>
@@ -106,7 +107,7 @@ public:
 		__out CREDENTIAL_PROVIDER_STATUS_ICON* pcpsiOptionalStatusIcon) override;
 
 public:
-	// IConnectableCredentialProviderCredential 
+	// IConnectableCredentialProviderCredential
 	IFACEMETHODIMP Connect(__in IQueryContinueWithStatus* pqcws) override;
 	IFACEMETHODIMP Disconnect() override;
 
@@ -140,7 +141,7 @@ private:
 
 	void ShowErrorMessage(const std::wstring& message, const HRESULT& code = 0);
 
-	void PushAuthenticationCallback(const PIResponse& response);
+	void PushAuthenticationCallback(const EduMFAResponse& response);
 
 	HBITMAP CreateBitmapFromBase64PNG(const std::wstring& base64);
 
@@ -150,7 +151,7 @@ private:
 
 	HRESULT FIDORegistration(IQueryContinueWithStatus* pqcws);
 
-	HRESULT EvaluateResponse(PIResponse& response);
+	HRESULT EvaluateResponse(EduMFAResponse& response);
 
 	HRESULT LoadBitmapFromPathOrResource(const std::wstring& bitmapPath, HBITMAP* phbmp);
 
@@ -172,17 +173,17 @@ private:
 	// An array holding the state of each field in the tile.
 	FIELD_STATE_PAIR _rgFieldStatePairs[FID_NUM_FIELDS];
 
-	// An array holding the string value of each field. This is different from the name of 
+	// An array holding the string value of each field. This is different from the name of
 	// the field held in _rgCredProvFieldDescriptors.
 	wchar_t* _rgFieldStrings[FID_NUM_FIELDS];
 	ICredentialProviderCredentialEvents* _pCredProvCredentialEvents = nullptr;
 	DWORD _dwComboIndex;
-	PrivacyIDEA	_privacyIDEA;
+	EduMFA	_eduMFA;
 	std::shared_ptr<Configuration> _config;
 	Utilities _util;
 	std::wstring _initialDomain;
 	int _lastStatus = S_OK;
-	bool _privacyIDEASuccess = false;
+	bool _eduMFASuccess = false;
 	bool _fidoDeviceSearchCancelled = false;
 	bool _modeSwitched = false;
 	std::optional<FIDOSignRequest> _passkeyChallenge = std::nullopt;

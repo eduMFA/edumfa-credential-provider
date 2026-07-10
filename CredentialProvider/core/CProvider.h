@@ -86,7 +86,7 @@ public:
 	IFACEMETHODIMP GetCredentialAt(__in DWORD dwIndex, __deref_out ICredentialProviderCredential** ppcpc) override;
 
 	friend HRESULT CSample_CreateInstance(__in REFIID riid, __deref_out void** ppv);
-	
+
 protected:
 	CProvider();
 	__override ~CProvider();
@@ -95,7 +95,7 @@ private:
 	void _CleanupSetSerialization();
 
 	void _GetSerializedCredentials(PWSTR *username, PWSTR *password, PWSTR *domain);
-	
+
 	bool _SerializationAvailable(SERIALIZATION_AVAILABLE checkFor);
 
 private:

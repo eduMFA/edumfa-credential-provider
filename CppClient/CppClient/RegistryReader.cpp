@@ -50,40 +50,40 @@ bool RegistryReader::GetAll(const std::wstring& pathToKey, std::map<std::wstring
 	auto dwRet = RegOpenKeyEx(HKEY_LOCAL_MACHINE, pathToKey.c_str(), 0, KEY_READ, &hKey);
 	if (dwRet != ERROR_SUCCESS)
 	{
-		PIError("Failed to open registry key " + Convert::ToString(pathToKey) + ", error: " + Convert::LongToHexString(dwRet));
+		EDUMFAError("Failed to open registry key " + Convert::ToString(pathToKey) + ", error: " + Convert::LongToHexString(dwRet));
 		return false;
 	}
 
-	WCHAR    achClass[MAX_PATH] = TEXT(""); // buffer for class name 
-	DWORD    cchClassName = MAX_PATH;		// size of class string 
-	DWORD    cSubKeys = 0;					// number of subkeys 
-	DWORD    cbMaxSubKey;					// longest subkey size 
-	DWORD    cchMaxClass;					// longest class string 
-	DWORD    cValues;						// number of values for key 
-	DWORD    cchMaxValue;					// longest value name 
-	DWORD    cbMaxValueData;				// longest value data 
-	DWORD    cbSecurityDescriptor;			// size of security descriptor 
-	FILETIME ftLastWriteTime;				// last write time 
+	WCHAR    achClass[MAX_PATH] = TEXT(""); // buffer for class name
+	DWORD    cchClassName = MAX_PATH;		// size of class string
+	DWORD    cSubKeys = 0;					// number of subkeys
+	DWORD    cbMaxSubKey;					// longest subkey size
+	DWORD    cchMaxClass;					// longest class string
+	DWORD    cValues;						// number of values for key
+	DWORD    cchMaxValue;					// longest value name
+	DWORD    cbMaxValueData;				// longest value data
+	DWORD    cbSecurityDescriptor;			// size of security descriptor
+	FILETIME ftLastWriteTime;				// last write time
 
 	DWORD i, retCode;
 
 	WCHAR achValue[MAX_VALUE_NAME];
 	DWORD cchValue = MAX_VALUE_NAME;
 
-	// Get the class name and the value count. 
+	// Get the class name and the value count.
 	retCode = RegQueryInfoKey(
-		hKey,                    // key handle 
-		achClass,                // buffer for class name 
-		&cchClassName,           // size of class string 
-		NULL,                    // reserved 
-		&cSubKeys,               // number of subkeys 
-		&cbMaxSubKey,            // longest subkey size 
-		&cchMaxClass,            // longest class string 
-		&cValues,                // number of values for this key 
-		&cchMaxValue,            // longest value name 
-		&cbMaxValueData,         // longest value data 
-		&cbSecurityDescriptor,   // security descriptor 
-		&ftLastWriteTime);       // last write time 
+		hKey,                    // key handle
+		achClass,                // buffer for class name
+		&cchClassName,           // size of class string
+		NULL,                    // reserved
+		&cSubKeys,               // number of subkeys
+		&cbMaxSubKey,            // longest subkey size
+		&cchMaxClass,            // longest class string
+		&cValues,                // number of values for this key
+		&cchMaxValue,            // longest value name
+		&cbMaxValueData,         // longest value data
+		&cbSecurityDescriptor,   // security descriptor
+		&ftLastWriteTime);       // last write time
 
 	if (cValues)
 	{
@@ -125,7 +125,7 @@ bool RegistryReader::GetAll(const std::wstring& pathToKey, std::map<std::wstring
 			}
 			else
 			{
-				PIDebug("Failed to read registry value at index " + to_string(i) + " in key " + Convert::ToString(pathToKey) +
+				EDUMFADebug("Failed to read registry value at index " + to_string(i) + " in key " + Convert::ToString(pathToKey) +
 					", error: " + Convert::LongToHexString(retCode));
 			}
 		}
@@ -143,7 +143,7 @@ std::wstring RegistryReader::GetWString(std::wstring name) noexcept
 	dwRet = RegOpenKeyEx(HKEY_LOCAL_MACHINE, path.c_str(), NULL, KEY_QUERY_VALUE, &hKey);
 	if (dwRet != ERROR_SUCCESS)
 	{
-		PIError("Failed to open registry key " + Convert::ToString(path) + ", error: " + Convert::LongToHexString(dwRet));
+		EDUMFAError("Failed to open registry key " + Convert::ToString(path) + ", error: " + Convert::LongToHexString(dwRet));
 		return L"";
 	}
 
@@ -154,14 +154,14 @@ std::wstring RegistryReader::GetWString(std::wstring name) noexcept
 	dwRet = RegQueryValueEx(hKey, name.c_str(), NULL, &dwType, (LPBYTE)&szValue, &dwValue);
 	if (dwRet != ERROR_SUCCESS)
 	{
-		PIDebug("Failed to read registry value " + Convert::ToString(name) + ", error: " + Convert::LongToHexString(dwRet));
+		EDUMFADebug("Failed to read registry value " + Convert::ToString(name) + ", error: " + Convert::LongToHexString(dwRet));
 		return L"";
 	}
 
 	if (dwType != REG_SZ)
 	{
-		PIError("Type of registry value " + Convert::ToString(name) + " is not REG_SZ, but " + Convert::LongToHexString(dwType));
-		return L""; 
+		EDUMFAError("Type of registry value " + Convert::ToString(name) + " is not REG_SZ, but " + Convert::LongToHexString(dwType));
+		return L"";
 	}
 
 	return wstring(szValue);
@@ -180,7 +180,7 @@ int RegistryReader::GetInt(std::wstring name) noexcept
 	DWORD dwRet = RegOpenKeyEx(HKEY_LOCAL_MACHINE, path.c_str(), 0, KEY_QUERY_VALUE, &hKey);
 	if (dwRet != ERROR_SUCCESS)
 	{
-		PIDebug("Failed to open registry key " + Convert::ToString(path) + ", error: " + Convert::LongToHexString(dwRet));
+		EDUMFADebug("Failed to open registry key " + Convert::ToString(path) + ", error: " + Convert::LongToHexString(dwRet));
 		return 0;
 	}
 
@@ -212,7 +212,7 @@ int RegistryReader::GetInt(std::wstring name) noexcept
 		}
 		else
 		{
-			PIDebug("Registry value " + Convert::ToString(name) + " exists but is not REG_DWORD or REG_SZ. Type: " + Convert::LongToHexString(dwType));
+			EDUMFADebug("Registry value " + Convert::ToString(name) + " exists but is not REG_DWORD or REG_SZ. Type: " + Convert::LongToHexString(dwType));
 		}
 	}
 
@@ -226,7 +226,7 @@ std::vector<std::wstring> RegistryReader::GetMultiSZ(const std::wstring& valueNa
 	LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, path.c_str(), 0, KEY_READ, &hKey);
 	if (result != ERROR_SUCCESS)
 	{
-		PIError("Failed to open registry key " + Convert::ToString(path) + ", error: " + Convert::LongToHexString(result));
+		EDUMFAError("Failed to open registry key " + Convert::ToString(path) + ", error: " + Convert::LongToHexString(result));
 		return std::vector<std::wstring>();
 	}
 
@@ -234,7 +234,7 @@ std::vector<std::wstring> RegistryReader::GetMultiSZ(const std::wstring& valueNa
 	result = RegQueryValueEx(hKey, valueName.c_str(), 0, &dwType, 0, &dwSize);
 	if (result != ERROR_SUCCESS)
 	{
-		PIError("Failed to query size of registry value " + Convert::ToString(valueName) + ", error: " + Convert::LongToHexString(result));
+		EDUMFAError("Failed to query size of registry value " + Convert::ToString(valueName) + ", error: " + Convert::LongToHexString(result));
 		return std::vector<std::wstring>();
 	}
 
@@ -242,7 +242,7 @@ std::vector<std::wstring> RegistryReader::GetMultiSZ(const std::wstring& valueNa
 	result = RegQueryValueEx(hKey, valueName.c_str(), 0, &dwType, (LPBYTE)buffer.data(), &dwSize);
 	if (result != ERROR_SUCCESS)
 	{
-		PIDebug("Failed to read registry value " + Convert::ToString(valueName) + ", error: " + Convert::LongToHexString(result));
+		EDUMFADebug("Failed to read registry value " + Convert::ToString(valueName) + ", error: " + Convert::LongToHexString(result));
 		return std::vector<std::wstring>();
 	}
 

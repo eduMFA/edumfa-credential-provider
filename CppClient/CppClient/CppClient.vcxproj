@@ -17,7 +17,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{6DB4CA8D-7529-4310-A4CF-F3DED2D143CC}</ProjectGuid>
-    <RootNamespace>PrivacyIDEACppClientCore</RootNamespace>
+    <RootNamespace>EduMFACppClientCore</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>CppClient</ProjectName>
   </PropertyGroup>
@@ -133,8 +133,8 @@
     <ClCompile Include="JsonParser.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="OfflineHandler.cpp" />
-    <ClCompile Include="PIResponse.cpp" />
-    <ClCompile Include="PrivacyIDEA.cpp" />
+    <ClCompile Include="EduMFAResponse.cpp" />
+    <ClCompile Include="EduMFA.cpp" />
     <ClCompile Include="RegistryReader.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -151,9 +151,9 @@
     <ClInclude Include="OfflineData.h" />
     <ClInclude Include="OfflineHandler.h" />
     <ClInclude Include="FIDORegistrationRequest.h" />
-    <ClInclude Include="PIConfig.h" />
-    <ClInclude Include="PIResponse.h" />
-    <ClInclude Include="PrivacyIDEA.h" />
+    <ClInclude Include="EduMFAConfig.h" />
+    <ClInclude Include="EduMFAResponse.h" />
+    <ClInclude Include="EduMFA.h" />
     <ClInclude Include="RegistryReader.h" />
     <ClInclude Include="FIDOSignRequest.h" />
     <ClInclude Include="FIDOSignResponse.h" />

@@ -1,6 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * *
 **
 ** Copyright 2025 NetKnights GmbH
+** Copyright 2026 Helsinki Systems GmbH
 ** Author: Nils Behlen
 **
 **    Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +25,7 @@
 /// This is a subset of the configuration loaded by the application using the cpp-client.
 /// These values are required for the operation of the cpp-client.
 /// </summary>
-struct PIConfig
+struct EduMFAConfig
 {
 	std::wstring hostname = L"";
 	std::wstring path = L"";
@@ -36,18 +37,18 @@ struct PIConfig
 
 	bool ignoreInvalidCN = false;
 	bool ignoreUnknownCA = false;
-	std::wstring userAgent = L"privacyidea-cpp-client";
+	std::wstring userAgent = L"eduMFA-cpp-client";
 
 	std::map<std::wstring, std::wstring> realmMap = std::map<std::wstring, std::wstring>();
 	std::wstring defaultRealm = L"";
 	bool logPasswords = false;
 	bool sendUPN = false;
-	
+
 	std::wstring offlineFilePath = L"C:\\offlineFile.json";
 	int offlineTryWindow = 10;
 	int offlineExpirationDays = 0;
 	int offlineDeleteAfterDays = 0;
-	
+
 	// optionals
 	int resolveTimeout = 0; // = infinite
 	int connectTimeout = 60000;

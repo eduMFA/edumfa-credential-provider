@@ -82,8 +82,8 @@ static const FIELD_STATE_PAIR s_rgScenarioUsernamePassword[] =
 	{ CPFS_HIDDEN, CPFIS_NONE },							// FID_USER_SELECT
 };
 
-// PRIVACYIDEA
-static const FIELD_STATE_PAIR s_rgScenarioPrivacyIDEA[] =
+// EDUMFA
+static const FIELD_STATE_PAIR s_rgScenarioEduMFA[] =
 {
 	{ CPFS_DISPLAY_IN_BOTH, CPFIS_NONE },					// FID_LOGO
 	{ CPFS_DISPLAY_IN_BOTH, CPFIS_NONE },					// FID_LARGE_TEXT

@@ -1,6 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * *
 **
 ** Copyright 2025 NetKnights GmbH
+** Copyright 2026 Helsinki Systems GmbH
 ** Author: Nils Behlen
 **
 **    Licensed under the Apache License, Version 2.0 (the "License");
@@ -97,12 +98,12 @@ void Configuration::Load()
 	// Connection settings
 	piconfig.hostname = rr.GetWString(L"hostname");
 	wstring tmp = rr.GetWString(L"path");
-	piconfig.path = (tmp == L"/path/to/pi" ? L"" : tmp);
+	piconfig.path = (tmp == L"/path/to/edumfa" ? L"" : tmp);
 	piconfig.port = rr.GetInt(L"custom_port");
 	piconfig.ignoreUnknownCA = rr.GetBool(L"ssl_ignore_unknown_ca");
 	piconfig.ignoreInvalidCN = rr.GetBool(L"ssl_ignore_invalid_cn");
 
-	piconfig.userAgent = L"privacyidea-cp/" + Convert::ToWString(string(VER_FILE_VERSION_STR));
+	piconfig.userAgent = L"eduMFA-cp/" + Convert::ToWString(string(VER_FILE_VERSION_STR));
 	if (!rr.GetBool(L"user_agent_hide_computer_name"))
 	{
 		piconfig.userAgent += L" Windows/" + Utilities::ComputerName();
@@ -149,7 +150,7 @@ void Configuration::Load()
 
 	prefillUsername = rr.GetBool(L"prefill_username");
 	showResetLink = rr.GetBool(L"enable_reset");
-	
+
 	// Offline
 	offlineTreshold = rr.GetInt(L"offline_threshold");
 	offlineShowInfo = rr.GetBool(L"offline_show_info");
@@ -158,7 +159,7 @@ void Configuration::Load()
 	piconfig.offlineFilePath = rr.GetWString(L"offline_file");
 	piconfig.offlineTryWindow = rr.GetInt(L"offline_try_window");
 	checkAllOfflineCredentials = rr.GetBool(L"check_all_offline_credentials");
-	
+
 	piconfig.sendUPN = rr.GetBool(L"send_upn");
 	resolveUPN = rr.GetBool(L"resolve_upn");
 	piconfig.acceptLanguage = ValidateAcceptLanguage(rr.GetWString(L"header_accept_language"));
@@ -168,7 +169,7 @@ void Configuration::Load()
 	{
 		if (language.size() != 2)
 		{
-			PIError("Configured language code is invalid: " + language + ", only 2 characters allowed, like 'en' or 'de'. Using language from system.");
+			EDUMFAError("Configured language code is invalid: " + language + ", only 2 characters allowed, like 'en' or 'de'. Using language from system.");
 		}
 		else
 		{
@@ -194,7 +195,7 @@ void Configuration::Load()
 	webAuthnOfflineHideFirstStep = rr.GetBool(L"webauthn_offline_hide_first_step");
 	disablePasskey = rr.GetBool(L"disable_passkey");
 	if (disablePasskey) {
-		PIDebug("Passkey usage is disabled via configuration, also disabling passkey_first_step.");
+		EDUMFADebug("Passkey usage is disabled via configuration, also disabling passkey_first_step.");
 	}
 	else {
 		passkeyFirstStep = rr.GetBool(L"passkey_first_step");
@@ -204,7 +205,7 @@ void Configuration::Load()
 
 	// invert name and logic for explicit disable
 	useWindowsHelloForCredUI = !rr.GetBool(L"disable_windows_hello_for_credui");
-	
+
 	// Validate that only one of hideDomainName OR hideFullName is active
 	// In the installer it is exclusive but could be changed in the registry
 	if (hideDomainName && hideFullName)
@@ -234,7 +235,7 @@ std::string Configuration::ValidateAcceptLanguage(std::wstring configEntry)
 		wchar_t wlanguage[9] = { 0 };
 		if (GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SISO639LANGNAME, wlanguage, sizeof(wlanguage) / sizeof(wchar_t)) == 0)
 		{
-			PIError("Unable to get ISO 639 language name, using default en-US.");
+			EDUMFAError("Unable to get ISO 639 language name, using default en-US.");
 			return "en-US";
 		}
 
@@ -242,12 +243,12 @@ std::string Configuration::ValidateAcceptLanguage(std::wstring configEntry)
 		wchar_t country[9] = { 0 };
 		if (GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SISO3166CTRYNAME, country, sizeof(country) / sizeof(wchar_t)) == 0)
 		{
-			PIError("Unable to get ISO 3166 country name, using default en-US.");
+			EDUMFAError("Unable to get ISO 3166 country name, using default en-US.");
 			return "en-US";
 		}
 
 		std::wstring wresult = wlanguage;
-		PIDebug("Language result: " + Convert::ToString(wresult));
+		EDUMFADebug("Language result: " + Convert::ToString(wresult));
 		wresult += L"-";
 		for (wchar_t& c : wresult) c = towlower(c);
 		for (wchar_t& c : country) c = towlower(c);
@@ -260,7 +261,7 @@ std::string Configuration::ValidateAcceptLanguage(std::wstring configEntry)
 		auto str = Convert::ToString(configEntry);
 		if (str.length() != 5)
 		{
-			PIError("Configured Accept-Language format is invalid: " + str + ". Using default en-US.");
+			EDUMFAError("Configured Accept-Language format is invalid: " + str + ". Using default en-US.");
 			return "en-US";
 		}
 		else if (std::isalpha(str[0]) && std::isalpha(str[1]) && str[2] == '-' && std::isalpha(str[3]) && std::isalpha(str[4]))
@@ -269,7 +270,7 @@ std::string Configuration::ValidateAcceptLanguage(std::wstring configEntry)
 		}
 		else
 		{
-			PIError("Configured Accept-Language format is invalid: " + str + ". Using default en-US.");
+			EDUMFAError("Configured Accept-Language format is invalid: " + str + ". Using default en-US.");
 			return "en-US";
 		}
 	}
@@ -279,7 +280,7 @@ static void PrintIfIntIsNotValue(string message, int value, int comparable)
 {
 	if (value != comparable)
 	{
-		PIDebug(message + ": " + to_string(value));
+		EDUMFADebug(message + ": " + to_string(value));
 	}
 }
 
@@ -292,18 +293,18 @@ static void PrintIfStringNotEmpty(wstring message, wstring value)
 {
 	if (!value.empty())
 	{
-		PIDebug(message + L": " + value);
+		EDUMFADebug(message + L": " + value);
 	}
 }
 
 void Configuration::LogConfig()
 {
-	PIDebug("---------------------------------");
-	PIDebug("CP Version: " + string(VER_FILE_VERSION_STR));
-	PIDebug("Windows Version: " + WindowsInfoToString(windowsVersion));
-	PIDebug("--------- Configuration ---------");
-	PIDebug(L"Hostname: " + piconfig.hostname);
-	PIDebug("Port: " + to_string(piconfig.port));
+	EDUMFADebug("---------------------------------");
+	EDUMFADebug("CP Version: " + string(VER_FILE_VERSION_STR));
+	EDUMFADebug("Windows Version: " + WindowsInfoToString(windowsVersion));
+	EDUMFADebug("--------- Configuration ---------");
+	EDUMFADebug(L"Hostname: " + piconfig.hostname);
+	EDUMFADebug("Port: " + to_string(piconfig.port));
 	PrintIfStringNotEmpty(L"Path", piconfig.path);
 
 	PrintIfIntIsNotNull("Resolve timeout", piconfig.resolveTimeout);
@@ -330,7 +331,7 @@ void Configuration::LogConfig()
 	PrintIfIntIsNotNull("Show domain hint", showDomainHint);
 	PrintIfIntIsNotNull("Prefill username", prefillUsername);
 	PrintIfIntIsNotNull("Show reset link", showResetLink);
-	
+
 	// FIDO / WebAuthn
 	PrintIfIntIsNotNull("WebAuthn preferred", webAuthnPreferred);
 	PrintIfIntIsNotNull("WebAuthn offline no PIN", webAuthnOfflineNoPIN);
@@ -341,9 +342,9 @@ void Configuration::LogConfig()
 	PrintIfIntIsNotNull("Passkey first step", passkeyFirstStep);
 	if (!trustedRPIDs.empty())
 	{
-		PIDebug(L"Trusted RPIDs: " + Convert::JoinW(trustedRPIDs, L", "));
+		EDUMFADebug(L"Trusted RPIDs: " + Convert::JoinW(trustedRPIDs, L", "));
 	}
-	PIDebug("useWindowsHelloForCredUI: " + string(useWindowsHelloForCredUI ? "true" : "false"));
+	EDUMFADebug("useWindowsHelloForCredUI: " + string(useWindowsHelloForCredUI ? "true" : "false"));
 	// Offline
 	PrintIfStringNotEmpty(L"Offline file path", piconfig.offlineFilePath);
 	PrintIfIntIsNotNull("Offline try window", piconfig.offlineTryWindow);
@@ -357,12 +358,12 @@ void Configuration::LogConfig()
 
 	PrintIfIntIsNotNull("Send UPN", piconfig.sendUPN);
 	PrintIfStringNotEmpty(L"Bitmap path", bitmapPath);
-	
+
 	PrintIfStringNotEmpty(L"Default realm", piconfig.defaultRealm);
 	PrintIfIntIsNotNull("Hide first step response error", hideFirstStepResponseError);
 
-	PIDebug("Language: " + language);
-	PIDebug("Accept-Language: " + piconfig.acceptLanguage);
+	EDUMFADebug("Language: " + language);
+	EDUMFADebug("Accept-Language: " + piconfig.acceptLanguage);
 
 	PrintIfIntIsNotNull("Is remote session", isRemoteSession);
 	PrintIfStringNotEmpty(L"Excluded account", excludedAccount);
@@ -382,9 +383,9 @@ void Configuration::LogConfig()
 		{
 			tmp += item.first + L"=" + item.second + L", ";
 		}
-		PIDebug("Realm mapping:");
-		PIDebug(tmp.substr(0, tmp.size() - 2).c_str());
+		EDUMFADebug("Realm mapping:");
+		EDUMFADebug(tmp.substr(0, tmp.size() - 2).c_str());
 	}
 
-	PIDebug("---------------------------------");
+	EDUMFADebug("---------------------------------");
 }

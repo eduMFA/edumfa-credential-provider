@@ -1,6 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * *
 **
 ** Copyright 2025 NetKnights GmbH
+** Copyright 2026 Helsinki Systems GmbH
 ** Author: Nils Behlen
 **
 **    Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,8 +22,8 @@
 #include <map>
 #include <vector>
 
-constexpr auto CONFIG_REGISTRY_PATH = L"SOFTWARE\\Netknights GmbH\\PrivacyIDEA-CP\\";
-constexpr auto REALM_MAPPING_REGISTRY_PATH = L"SOFTWARE\\Netknights GmbH\\PrivacyIDEA-CP\\realm-mapping";
+constexpr auto CONFIG_REGISTRY_PATH = L"SOFTWARE\\eduMFA\\credentials-provider\\";
+constexpr auto REALM_MAPPING_REGISTRY_PATH = L"SOFTWARE\\eduMFA\\credentials-provider\\realm-mapping";
 constexpr auto LAST_USER_REGISTRY_PATH = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI";
 
 class RegistryReader

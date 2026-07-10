@@ -1,6 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * *
 **
 ** Copyright 2025 NetKnights GmbH
+** Copyright 2026 Helsinki Systems GmbH
 ** Author: Nils Behlen
 **
 **    Licensed under the Apache License, Version 2.0 (the "License");
@@ -55,7 +56,7 @@ std::optional<time_t> ISOStringToTime(const std::string& iso)
 	return _mkgmtime(&tm_buf); // _mkgmtime is the inverse of gmtime (UTC)
 }
 
-void ParseVersionString(const std::string& version, PIResponse& response)
+void ParseVersionString(const std::string& version, EduMFAResponse& response)
 {
 	int major = 0, minor = 0, patch = 0;
 	std::string suffix;
@@ -84,10 +85,10 @@ void ParseVersionString(const std::string& version, PIResponse& response)
 		else
 			suffix.clear();
 	}
-	response.privacyIDEAVersionMajor = major;
-	response.privacyIDEAVersionMinor = minor;
-	response.privacyIDEAVersionPatch = patch;
-	response.privacyIDEAVersionSuffix = suffix;
+	response.eduMFAVersionMajor = major;
+	response.eduMFAVersionMinor = minor;
+	response.eduMFAVersionPatch = patch;
+	response.eduMFAVersionSuffix = suffix;
 }
 
 int GetIntOrZero(json& input, string fieldName)
@@ -129,15 +130,15 @@ json ParseJson(std::string input)
 	}
 	catch (const json::parse_error& e)
 	{
-		PIDebug(e.what());
+		EDUMFADebug(e.what());
 		return nullptr;
 	}
 	return jRoot;
 }
 
-HRESULT JsonParser::ParseResponse(std::string serverResponse, PIResponse& response)
+HRESULT JsonParser::ParseResponse(std::string serverResponse, EduMFAResponse& response)
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 	json jRoot;
 	try
 	{
@@ -145,8 +146,8 @@ HRESULT JsonParser::ParseResponse(std::string serverResponse, PIResponse& respon
 	}
 	catch (const json::parse_error& e)
 	{
-		PIDebug(e.what());
-		return PI_JSON_PARSE_ERROR;
+		EDUMFADebug(e.what());
+		return EDUMFA_JSON_PARSE_ERROR;
 	}
 
 	if (jRoot.contains("result"))
@@ -182,8 +183,8 @@ HRESULT JsonParser::ParseResponse(std::string serverResponse, PIResponse& respon
 	}
 	else
 	{
-		PIDebug("Reponse did not contain 'result'");
-		return PI_JSON_PARSE_ERROR;
+		EDUMFADebug("Reponse did not contain 'result'");
+		return EDUMFA_JSON_PARSE_ERROR;
 	}
 
 	auto& jDetail = jRoot["detail"];
@@ -262,9 +263,9 @@ HRESULT JsonParser::ParseResponse(std::string serverResponse, PIResponse& respon
 				}
 				else
 				{
-					PIDebug("authenticatorSelection in passkey_registration was expected to be object, but was not.");
+					EDUMFADebug("authenticatorSelection in passkey_registration was expected to be object, but was not.");
 				}
-				// PubKeyCredParams				
+				// PubKeyCredParams
 				auto& pubKeyCredParams = pkreg["pubKeyCredParams"];
 				if (pubKeyCredParams.is_array())
 				{
@@ -278,13 +279,13 @@ HRESULT JsonParser::ParseResponse(std::string serverResponse, PIResponse& respon
 						}
 						else
 						{
-							PIDebug("Warning: Found non-object element in pubKeyCredParams array.");
+							EDUMFADebug("Warning: Found non-object element in pubKeyCredParams array.");
 						}
 					}
 				}
 				else
 				{
-					PIDebug("pubKeyCredParams in passkey_registration was expected to be array, but was not.");
+					EDUMFADebug("pubKeyCredParams in passkey_registration was expected to be array, but was not.");
 				}
 
 				response.passkeyRegistration = registrationRequest;
@@ -363,7 +364,7 @@ std::string JsonParser::PrettyFormatJson(std::string input)
 	}
 	catch (const json::parse_error& e)
 	{
-		PIDebug(e.what());
+		EDUMFADebug(e.what());
 		return input;
 	}
 	return jRoot.dump(JSON_DUMP_INDENTATION);
@@ -378,7 +379,7 @@ bool JsonParser::IsStillActiveOfflineToken(const std::string& input)
 	}
 	catch (const json::parse_error& e)
 	{
-		PIDebug(e.what());
+		EDUMFADebug(e.what());
 		return true;
 	}
 
@@ -414,7 +415,7 @@ HRESULT ParseOfflineDataItem(json jRoot, OfflineData& data)
 		}
 		else
 		{
-			PIDebug("Failed to parse ISO 8601 expiration_date: " + expStr);
+			EDUMFADebug("Failed to parse ISO 8601 expiration_date: " + expStr);
 			// Fallback if parsing fails to avoid accidentally defaulting to 0 (never expires) blindly
 			data.expiration = (time_t)GetIntOrZero(jRoot, "expiration");
 		}
@@ -429,8 +430,8 @@ HRESULT ParseOfflineDataItem(json jRoot, OfflineData& data)
 	auto& response = jRoot["response"];
 	if (response == nullptr)
 	{
-		PIDebug("Offline data item did not contain 'response'");
-		return PI_JSON_PARSE_ERROR;
+		EDUMFADebug("Offline data item did not contain 'response'");
+		return EDUMFA_JSON_PARSE_ERROR;
 	}
 
 	const bool isWebAuthn = response.contains("credentialId") && response.contains("rpId") && response.contains("pubKey");
@@ -460,13 +461,13 @@ HRESULT ParseOfflineDataItem(json jRoot, OfflineData& data)
 				}
 				catch (const std::invalid_argument& e)
 				{
-					PIDebug(e.what());
+					EDUMFADebug(e.what());
 				}
 			}
 		}
 		catch (const json::type_error& e)
 		{
-			PIDebug(e.what());
+			EDUMFADebug(e.what());
 
 		}
 	}
@@ -528,7 +529,7 @@ std::string JsonParser::OfflineDataToString(std::vector<OfflineData> data)
 
 std::vector<OfflineData> JsonParser::ParseFileContentsForOfflineData(std::string input)
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 	auto j = ParseJson(input);
 
 	std::vector<OfflineData> ret;
@@ -549,7 +550,7 @@ std::vector<OfflineData> JsonParser::ParseFileContentsForOfflineData(std::string
 
 std::vector<OfflineData> JsonParser::ParseResponseForOfflineData(std::string serverResponse)
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 	std::vector<OfflineData> ret;
 	auto jRoot = ParseJson(serverResponse);
 	if (jRoot == nullptr) return ret;
@@ -580,7 +581,7 @@ std::vector<OfflineData> JsonParser::ParseResponseForOfflineData(std::string ser
 			}
 
 			ret.push_back(newData);
-			PIDebug("Received offline data for user '" + newData.username + "'");
+			EDUMFADebug("Received offline data for user '" + newData.username + "'");
 		}
 	}
 	return ret;
@@ -597,16 +598,16 @@ std::string JsonParser::GetRefilltoken(std::string input)
 	}
 	catch (const std::exception& e)
 	{
-		PIError(e.what());
+		EDUMFAError(e.what());
 		return "";
 	}
 }
 
 HRESULT JsonParser::ParseRefillResponse(const std::string& in, const std::string& username, OfflineData& data)
 {
-	PIDebug(__FUNCTION__);
+	EDUMFADebug(__FUNCTION__);
 	auto jRoot = ParseJson(in);
-	if (jRoot == nullptr) return PI_JSON_PARSE_ERROR;
+	if (jRoot == nullptr) return EDUMFA_JSON_PARSE_ERROR;
 	json jOffline;
 	try
 	{
@@ -614,11 +615,11 @@ HRESULT JsonParser::ParseRefillResponse(const std::string& in, const std::string
 	}
 	catch (const std::exception& e)
 	{
-		PIDebug(e.what());
-		return PI_JSON_PARSE_ERROR;
+		EDUMFADebug(e.what());
+		return EDUMFA_JSON_PARSE_ERROR;
 	}
 
-	if (jOffline == nullptr) return PI_JSON_PARSE_ERROR;
+	if (jOffline == nullptr) return EDUMFA_JSON_PARSE_ERROR;
 
 	if (jOffline.contains("response"))
 	{
@@ -632,7 +633,7 @@ HRESULT JsonParser::ParseRefillResponse(const std::string& in, const std::string
 	}
 	else
 	{
-		PIDebug("'Reponse' field missing in OfflineRefill response");
+		EDUMFADebug("'Reponse' field missing in OfflineRefill response");
 		return E_FAIL;
 	}
 
@@ -642,7 +643,7 @@ HRESULT JsonParser::ParseRefillResponse(const std::string& in, const std::string
 	}
 	else
 	{
-		PIDebug("Missing refill token in server response.");
+		EDUMFADebug("Missing refill token in server response.");
 		data.refilltoken = "";
 	}
 	data.username = username;
@@ -660,7 +661,7 @@ bool JsonParser::ParsePollTransaction(std::string input)
 	}
 	else
 	{
-		PIDebug("PollTransaction response did not contain result");
+		EDUMFADebug("PollTransaction response did not contain result");
 	}
 
 	return false;

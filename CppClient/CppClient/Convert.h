@@ -32,7 +32,7 @@ public:
 	static std::string ToUpperCase(std::string s);
 	static std::string LongToHexString(long in);
 	static std::wstring JoinW(const std::vector<std::wstring>& elements, const wchar_t* separator);
-	
+
 	static std::vector<unsigned char> Base64Decode(const std::string& base64String);
 	static std::vector<unsigned char> Base64URLDecode(const std::string& base64String);
 	static std::string Base64Encode(const unsigned char* data, const size_t size, bool padded = false);

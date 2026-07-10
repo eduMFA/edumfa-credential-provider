@@ -9,7 +9,7 @@ enum class Mode
 	PASSWORD = 11,
 	USERNAMEPASSWORD = 12, // Required for send_pass.
 
-	PRIVACYIDEA = 13,
+	EDUMFA = 13,
 	SEC_KEY_ANY = 15,
 	PASSKEY = 16,
 

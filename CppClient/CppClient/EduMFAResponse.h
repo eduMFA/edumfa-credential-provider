@@ -27,7 +27,7 @@
 #include <string>
 #include <vector>
 
-class PIResponse
+class EduMFAResponse
 {
 public:
 	bool status = false;
@@ -48,7 +48,7 @@ public:
 	std::string GetPushMessage();
 
 	// Returns a single FIDOSignRequest in which, if there are multiple challenges, the credential ids have been merged
-	// However, challenges for passkey (trigger_by_pin can lead to having classic challenge-response like passkey) and webauthn are not compatible 
+	// However, challenges for passkey (trigger_by_pin can lead to having classic challenge-response like passkey) and webauthn are not compatible
 	// for legacy encoding reasons. Therefore, if both types are present, passkey will be prioritized, a log message will be emitted and webauthn challenges ignored.
 	std::optional<FIDOSignRequest> GetFIDOSignRequest();
 
@@ -66,12 +66,11 @@ public:
 
 	bool IsVersionHigherOrEqual(int major, int minor = 0, int patch = 0) const;
 
-	int privacyIDEAVersionMajor = 99;
-	int privacyIDEAVersionMinor = 99;
-	int privacyIDEAVersionPatch = 99;
-	std::string privacyIDEAVersionSuffix = ""; // like dev0, beta1
+	int eduMFAVersionMajor = 99;
+	int eduMFAVersionMinor = 99;
+	int eduMFAVersionPatch = 99;
+	std::string eduMFAVersionSuffix = ""; // like dev0, beta1
 
 	bool isEnrollViaMultichallenge = false; // true if the response is a multichallenge response, e.g. for FIDO2 registration
 	bool isEnrollCancellable = false; // true if the enrollment can be cancelled by the user
 };
-

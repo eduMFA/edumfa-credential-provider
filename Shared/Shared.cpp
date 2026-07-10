@@ -1,6 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * *
 **
 ** Copyright 2020 NetKnights GmbH
+** Copyright 2026 Helsinki Systems GmbH
 ** Author: Nils Behlen
 **
 **    Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,14 +28,14 @@ namespace Shared
 {
 	bool IsRequiredForScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus, int caller)
 	{
-		PIDebug(__FUNCTION__);
+		EDUMFADebug(__FUNCTION__);
 		if (caller != FILTER && caller != PROVIDER)
 		{
-			PIDebug("Invalid argument for caller: " + std::to_string(caller));
+			EDUMFADebug("Invalid argument for caller: " + std::to_string(caller));
 			return false;
 		}
 
-		RegistryReader rr(L"SOFTWARE\\Netknights GmbH\\PrivacyIDEA-CP\\");
+		RegistryReader rr(L"SOFTWARE\\eduMFA\\credentials-provider\\");
 		std::wstring entry;
 		const bool isRemote = Shared::IsCurrentSessionRemote();
 		switch (cpus)
@@ -62,7 +63,7 @@ namespace Shared
 				return false;
 		}
 		std::string strCaller = (caller == 0 ? "Provider" : "Filter");
-		PIDebug("Checking for " + strCaller + ", " + CPUStoString(cpus) + ", " + (isRemote ? "remote" : "local")
+		EDUMFADebug("Checking for " + strCaller + ", " + CPUStoString(cpus) + ", " + (isRemote ? "remote" : "local")
 			+ ", entry=" + Convert::ToString(entry));
 		// default - no additional config found
 		if (entry.empty()) return true;
@@ -135,7 +136,7 @@ namespace Shared
 			}
 		}
 
-		PIDebug(fIsRemoteable ? "Session is remote" : "Session is local");
+		EDUMFADebug(fIsRemoteable ? "Session is remote" : "Session is local");
 
 		return fIsRemoteable;
 	}

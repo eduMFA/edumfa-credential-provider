@@ -68,7 +68,7 @@ void CProvider::_CleanupSetSerialization()
 			pkil->LogonDomainName.MaximumLength +
 			pkil->UserName.MaximumLength +
 			pkil->Password.MaximumLength);
-		HeapFree(GetProcessHeap(), 0, _pkiulSetSerialization);
+		LocalFree(_pkiulSetSerialization);
 	}
 }
 

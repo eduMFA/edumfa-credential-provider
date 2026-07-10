@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: [Debug] # TODO: Add Release configuration, signing still makes issues
+        config: [Debug, Release]
 
     steps:
       - name: Checkout code

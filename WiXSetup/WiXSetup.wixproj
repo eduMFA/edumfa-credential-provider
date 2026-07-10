@@ -21,7 +21,7 @@
     <SuppressIces>ICE09;</SuppressIces>
   </PropertyGroup>
   <!-- Release configuration -->
-  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' Or '$(Configuration)' == 'Distribution' ">
     <SuppressIces>ICE09;</SuppressIces>
     <SuppressValidation>False</SuppressValidation>
   </PropertyGroup>

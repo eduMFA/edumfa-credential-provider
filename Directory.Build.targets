@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <Target Name="SignOutputTarget"
+          AfterTargets="Build"
+          Condition="'$(SignOutput)' == 'true' AND '$(ConfigurationType)' == 'DynamicLibrary'">
+    <PropertyGroup Condition="'$(SignCertPath)' != ''">
+      <SignCertArgs Condition="'$(SignCertPassword)' != ''">/f "$(SignCertPath)" /p "$(SignCertPassword)"</SignCertArgs>
+      <SignCertArgs Condition="'$(SignCertPassword)' == ''">/f "$(SignCertPath)"</SignCertArgs>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(SignCertPath)' == ''">
+      <SignCertArgs>/a</SignCertArgs>
+    </PropertyGroup>
+    <Exec Command='signtool sign /fd SHA256 /td SHA256 /tr "$(SignTimestampServer)" $(SignCertArgs) "$(TargetPath)"' />
+  </Target>
+</Project>

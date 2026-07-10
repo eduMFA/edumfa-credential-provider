@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <SignOutput Condition="'$(SignOutput)' == '' AND '$(Configuration)' == 'Distribution'">true</SignOutput>
+    <SignOutput Condition="'$(SignOutput)' == ''">false</SignOutput>
+    <SignTimestampServer Condition="'$(SignTimestampServer)' == ''">http://timestamp.digicert.com</SignTimestampServer>
+    <SignCertPath Condition="'$(SignCertPath)' == ''"></SignCertPath>
+    <SignCertPassword Condition="'$(SignCertPassword)' == ''"></SignCertPassword>
+  </PropertyGroup>
+</Project>

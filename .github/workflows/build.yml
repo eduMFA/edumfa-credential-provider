@@ -3,12 +3,36 @@ name: Build
 on:
   push:
     branches: [main]
+    tags:
+      - 'v*'
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      signing_policy:
+        description: 'SignPath signing policy'
+        type: choice
+        options: [test-signing, release-signing]
+        default: test-signing
+      version:
+        description: 'Version to stamp into the binaries, as major.minor.patch'
+        type: string
+        default: 0.0.0
+
+permissions:
+  contents: read
+
+# A signing run holds its ref for up to an hour waiting for approval, so keep it out of the group
+# main CI uses.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
+    if: ${{ !(startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch') }}
     runs-on: windows-2022
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -18,28 +42,134 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v3
-
-      - name: Setup dependencies
-        run: pwsh ./scripts/setup-dependencies.ps1 -SolutionDir ${{ github.workspace }}
-        shell: pwsh
-        working-directory: ${{ github.workspace }}
-
       - name: Build ${{ matrix.config }}
-        run: |
-          msbuild EduMFA-CredentialProvider.sln `
-            /p:Configuration=${{ matrix.config }} `
-            /p:Platform=x64 `
-            /p:VisualStudioVersion=17.0 `
-            /m `
-            /v:minimal
-        shell: pwsh
-        working-directory: ${{ github.workspace }}
+        id: msi
+        uses: ./.github/actions/build-msi
+        with:
+          configuration: ${{ matrix.config }}
 
       - name: Upload WiXSetup MSI
         uses: actions/upload-artifact@v7
         with:
           name: eduMFACredentialProviderSetup-${{ matrix.config }}-x64
-          path: WiXSetup/bin/x64/${{ matrix.config }}/en-us/eduMFACredentialProviderSetup.msi
+          path: ${{ steps.msi.outputs.msi-path }}
           if-no-files-found: error
+
+  package:
+    name: Package unsigned MSI
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: windows-2022
+    timeout-minutes: 30
+    outputs:
+      artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+      stamped-version: ${{ steps.msi.outputs.stamped-version }}
+      policy: ${{ steps.version.outputs.policy }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Resolve version and signing policy
+        id: version
+        shell: pwsh
+        run: |
+          if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
+            $raw    = '${{ inputs.version }}'
+            $policy = '${{ inputs.signing_policy }}'
+          } else {
+            $raw    = '${{ github.ref_name }}' -replace '^v', ''
+            $policy = 'release-signing'
+          }
+          if ($raw -notmatch '^\d+\.\d+\.\d+$') { throw "Expected major.minor.patch, got '$raw'" }
+          $version = $raw + '.0'
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "policy=$policy"   >> $env:GITHUB_OUTPUT
+          Write-Host "version=$version policy=$policy"
+
+      - name: Build Release (unsigned)
+        id: msi
+        uses: ./.github/actions/build-msi
+        with:
+          configuration: Release
+          version: ${{ steps.version.outputs.version }}
+
+      # archive: false pairs with skip-decompress: true so SignPath receives the raw MSI instead
+      # of a zip. It also forces the artifact name to the file name, so `name` is not set here.
+      - name: Upload unsigned MSI
+        id: unsigned
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.msi.outputs.msi-path }}
+          archive: false
+          if-no-files-found: error
+
+  sign:
+    name: Sign with SignPath
+    needs: package
+    runs-on: windows-2022
+    timeout-minutes: 75
+    permissions:
+      actions: read # required to hand the artifact to the SignPath connector
+
+    steps:
+      - name: Submit signing request
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+          organization-id: '${{ vars.SIGNPATH_ORGANIZATION_ID }}'
+          project-slug: 'edumfa-credential-provider'
+          signing-policy-slug: '${{ needs.package.outputs.policy }}'
+          artifact-configuration-slug: 'msi-deep-sign'
+          github-artifact-id: '${{ needs.package.outputs.artifact-id }}'
+          skip-decompress: true
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: 'signed'
+          parameters: |
+            version: "${{ needs.package.outputs.stamped-version }}"
+
+      # The test certificate chains to a self-signed root the runner does not trust, so only
+      # release-signing can demand a Valid status. Test-signing just needs a signature present.
+      - name: Verify signature
+        shell: pwsh
+        env:
+          POLICY: ${{ needs.package.outputs.policy }}
+        run: |
+          $msi = Get-ChildItem -Recurse -Filter *.msi signed | Select-Object -First 1
+          if (-not $msi) { throw 'SignPath returned no MSI' }
+          $sig = Get-AuthenticodeSignature $msi.FullName
+          Write-Host "Status : $($sig.Status)"
+          Write-Host "Signer : $($sig.SignerCertificate.Subject)"
+          if (-not $sig.SignerCertificate) { throw 'MSI is not signed' }
+          if ($env:POLICY -eq 'release-signing' -and $sig.Status -ne 'Valid') {
+            throw "MSI signature is $($sig.Status)"
+          }
+
+      - name: Upload signed MSI
+        uses: actions/upload-artifact@v7
+        with:
+          name: eduMFACredentialProviderSetup-signed-x64
+          path: signed/**/*.msi
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    needs: sign
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download signed MSI
+        uses: actions/download-artifact@v8
+        with:
+          name: eduMFACredentialProviderSetup-signed-x64
+          path: signed
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: signed/**/*.msi
+          generate_release_notes: true
+          fail_on_unmatched_files: true

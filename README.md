@@ -50,3 +50,17 @@ This performs the same steps the CI workflow uses:
 pwsh ./scripts/setup-dependencies.ps1
 pwsh ./scripts/setup-dependencies.ps1 -SkipMergeModules
 ```
+
+### Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by
+[SignPath Foundation](https://signpath.org).
+
+* Committers and reviewers: [eduMFA maintainers](https://github.com/orgs/eduMFA/people)
+* Approvers: [eduMFA maintainers](https://github.com/orgs/eduMFA/people)
+
+The [GitHub Actions workflow](.github/workflows/build.yml) builds release artifacts from a tagged
+commit, and SignPath signs them after manual approval.
+
+This program will not transfer any information to other networked systems unless specifically
+requested by the user or the person installing or operating it.

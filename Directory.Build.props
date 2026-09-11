@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
+  <!-- CI passes /p:Version and /p:VersionCommit. The defaults below cover a local build. -->
+  <PropertyGroup>
+    <Version Condition="'$(Version)' == ''">0.0.0.0</Version>
+    <VersionCommit Condition="'$(VersionCommit)' == ''">local</VersionCommit>
+    <VersionMajor>$([System.Version]::Parse($(Version)).Major)</VersionMajor>
+    <VersionMinor>$([System.Version]::Parse($(Version)).Minor)</VersionMinor>
+    <VersionBuild>$([System.Version]::Parse($(Version)).Build)</VersionBuild>
+    <VersionRevision>$([System.Version]::Parse($(Version)).Revision)</VersionRevision>
+    <VersionDefines>VERSION_MAJOR=$(VersionMajor);VERSION_MINOR=$(VersionMinor);VERSION_BUILD=$(VersionBuild);VERSION_REVISION=$(VersionRevision);VERSION_COMMIT=$(VersionCommit)</VersionDefines>
+  </PropertyGroup>
+
   <PropertyGroup>
     <SignOutput Condition="'$(SignOutput)' == '' AND '$(Configuration)' == 'Distribution'">true</SignOutput>
     <SignOutput Condition="'$(SignOutput)' == ''">false</SignOutput>

@@ -50,8 +50,9 @@ copyright = u'2015 LastSquirrel IT. 2018, NetKnights GmbH., Helsinki Systems Gmb
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
-# The short X.Y version.
-version = '3.8.0'
+# Read the Docs sets READTHEDOCS_VERSION from the tag it is building. A local docs build has no
+# tag and shows as 'dev'.
+version = os.environ.get('READTHEDOCS_VERSION', 'dev').lstrip('v')
 # The full version, including alpha/beta/rc tags.
 release = version
 

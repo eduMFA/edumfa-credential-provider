@@ -28,17 +28,25 @@
 #define STRINGIZE2(s) #s
 #define STRINGIZE(s) STRINGIZE2(s)
 
-#define VERSION_MAJOR               3
-#define VERSION_MINOR               8
-#define VERSION_BUILD               0
-#define VERSION_REVISION            0
+/* Directory.Build.props splits /p:Version and /p:VersionCommit into these defines and injects
+** them into every compile, so no version is hardcoded here. It always supplies all five. A
+** missing one means the injection broke, and a silent 0.0.0.0 binary is worse than a failed
+** build. */
+#ifndef VERSION_MAJOR
+#error "VERSION_MAJOR undefined. Build through MSBuild so Directory.Build.props can supply it."
+#endif
 
 #define VER_FILE_DESCRIPTION_STR    "eduMFA Credential Provider for Windows logon"
 #define VER_FILE_VERSION            VERSION_MAJOR, VERSION_MINOR, VERSION_BUILD, VERSION_REVISION
-#define VER_FILE_VERSION_STR        STRINGIZE(VERSION_MAJOR)        \
-                                    "." STRINGIZE(VERSION_MINOR)    \
-                                    "." STRINGIZE(VERSION_BUILD)    \
-                                    "." STRINGIZE(VERSION_REVISION) \
+
+/* Dotted numeric. Anything that parses the version uses this, the User-Agent included. */
+#define VER_VERSION_STR             STRINGIZE(VERSION_MAJOR)     \
+                                    "." STRINGIZE(VERSION_MINOR) \
+                                    "." STRINGIZE(VERSION_BUILD) \
+                                    "." STRINGIZE(VERSION_REVISION)
+
+/* Same, plus the commit, so a shipped binary names the source it came from. */
+#define VER_FILE_VERSION_STR        VER_VERSION_STR "-" STRINGIZE(VERSION_COMMIT)
 
 #define VER_PRODUCTNAME_STR         "eduMFA CredentialProvider"
 

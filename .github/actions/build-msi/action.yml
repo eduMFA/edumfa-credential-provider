@@ -1,0 +1,44 @@
+name: Build MSI
+description: Restores third-party dependencies and builds the installer for one configuration.
+
+inputs:
+  configuration:
+    description: MSBuild configuration to build (Debug or Release).
+    required: true
+  version:
+    description: Four-part version to stamp into the binaries.
+    required: false
+    default: 0.0.0.0
+
+outputs:
+  msi-path:
+    description: Path to the built MSI.
+    value: WiXSetup/bin/x64/${{ inputs.configuration }}/en-us/eduMFACredentialProviderSetup.msi
+  stamped-version:
+    description: The version string compiled into the binaries, as SignPath must see it.
+    value: ${{ steps.build.outputs.stamped-version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v3
+
+    - name: Setup dependencies
+      run: ./scripts/setup-dependencies.ps1
+      shell: pwsh
+
+    - name: Build ${{ inputs.configuration }}
+      id: build
+      shell: pwsh
+      run: |
+        $commit = '${{ github.sha }}'.Substring(0, 7)
+        "stamped-version=${{ inputs.version }}-$commit" >> $env:GITHUB_OUTPUT
+        msbuild EduMFA-CredentialProvider.sln `
+          /p:Configuration=${{ inputs.configuration }} `
+          /p:Platform=x64 `
+          /p:VisualStudioVersion=17.0 `
+          /p:Version=${{ inputs.version }} `
+          /p:VersionCommit=$commit `
+          /m `
+          /v:minimal

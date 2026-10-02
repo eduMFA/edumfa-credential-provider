@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Mirrors the live SignPath artifact configuration `msi-deep-sign`.
+
+  The `<include path>` values are placeholders until the SignPath analyzer reports the real paths
+  for a built MSI. Both DLLs install to System64Folder, so they likely differ from bare filenames.
+-->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <parameters>
+    <parameter name="version" required="true" />
+  </parameters>
+  <msi-file>
+    <pe-file-set
+        product-name="eduMFACredentialProvider"
+        product-version="${version}"
+        file-version="${version}"
+        company-name="eduMFA">
+      <include path="EduMFACredentialProvider.dll" />
+      <include path="EduMFACredentialProviderFilter.dll" />
+      <for-each>
+        <authenticode-sign />
+      </for-each>
+    </pe-file-set>
+    <authenticode-sign />
+  </msi-file>
+</artifact-configuration>

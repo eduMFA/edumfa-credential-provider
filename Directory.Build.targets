@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
+  <!-- Last import wins, so %(PreprocessorDefinitions) here picks up whatever each vcxproj set. -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>$(VersionDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>$(VersionDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+
+  <Target Name="ValidateVersion" BeforeTargets="ClCompile;ResourceCompile">
+    <Error Condition="'$([System.Text.RegularExpressions.Regex]::IsMatch($(Version), `^\d+\.\d+\.\d+\.\d+$`))' != 'true'"
+           Text="Version must have four numeric parts, e.g. 3.8.1.0. Got '$(Version)'." />
+  </Target>
+
   <Target Name="SignOutputTarget"
           AfterTargets="Build"
           Condition="'$(SignOutput)' == 'true' AND '$(ConfigurationType)' == 'DynamicLibrary'">

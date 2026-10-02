@@ -103,7 +103,7 @@ void Configuration::Load()
 	piconfig.ignoreUnknownCA = rr.GetBool(L"ssl_ignore_unknown_ca");
 	piconfig.ignoreInvalidCN = rr.GetBool(L"ssl_ignore_invalid_cn");
 
-	piconfig.userAgent = L"eduMFA-cp/" + Convert::ToWString(string(VER_FILE_VERSION_STR));
+	piconfig.userAgent = L"eduMFA-cp/" + Convert::ToWString(string(VER_VERSION_STR));
 	if (!rr.GetBool(L"user_agent_hide_computer_name"))
 	{
 		piconfig.userAgent += L" Windows/" + Utilities::ComputerName();

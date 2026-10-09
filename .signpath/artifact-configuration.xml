@@ -10,8 +10,8 @@
         product-version="${version}"
         file-version="${version}"
         company-name="eduMFA">
-      <include path="System64\EduMFACredentialProvider.dll" />
-      <include path="System64\EduMFACredentialProviderFilter.dll" />
+      <include path="**/EduMFACredentialProvider.dll" />
+      <include path="**/EduMFACredentialProviderFilter.dll" />
       <for-each>
         <authenticode-sign />
       </for-each>

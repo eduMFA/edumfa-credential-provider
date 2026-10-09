@@ -36,19 +36,15 @@ This project requires [json.hpp](https://github.com/nlohmann/json) in ``CppClien
 It also requires [libfido2](https://developers.yubico.com/libfido2/Releases/) for Windows to be in the ``$SolutionDir$`` (or adjust the include settings).
 Supports libfido2 with PCSC enabled.
 
-To build the installer, the VC143 merge modules are required to be in ``lib/merge``.
-
 #### Bootstrapping dependencies
 
 A PowerShell script is provided to download and place all third-party dependencies automatically.
 This performs the same steps the CI workflow uses:
-1. Copies the VC143 merge modules from the local Visual Studio install into ``lib/merge``.
-2. Downloads libfido2 1.15.0 (win64) and extracts the static libs + headers into ``libfido2-1.15.0-nfc-enabled/``.
-3. Downloads nlohmann/json v3.12.0 (single-header ``json.hpp``) into ``CppClient/CppClient/nlohmann/``.
+1. Downloads libfido2 1.15.0 (win64) and extracts the static libs + headers into ``libfido2-1.15.0-nfc-enabled/``.
+2. Downloads nlohmann/json v3.12.0 (single-header ``json.hpp``) into ``CppClient/CppClient/nlohmann/``.
 
 ```
 pwsh ./scripts/setup-dependencies.ps1
-pwsh ./scripts/setup-dependencies.ps1 -SkipMergeModules
 ```
 
 ### Code signing policy

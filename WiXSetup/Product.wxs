@@ -261,19 +261,6 @@
 			<RegistrySearch Id="SearchPasskeyFirstStep" Root="HKLM" Key="SOFTWARE\eduMFA\credentials-provider" Name="passkey_first_step" Win64="$(var.Win64)" Type="raw" />
 		</Property>
 		<Directory Id="TARGETDIR" Name="SourceDir">
-			<?if $(var.Configuration) = Debug ?>
-			<?if $(var.Platform) = x64 ?>
-			<Merge Id="VCRedist" SourceFile="$(var.SolutionDir)lib\merge\Microsoft_VC143_DebugCRT_x64.msm" DiskId="1" Language="0" />
-			<?else ?>
-			<Merge Id="VCRedist" SourceFile="$(var.SolutionDir)lib\merge\Microsoft_VC143_DebugCRT_x86.msm" DiskId="1" Language="0" />
-			<?endif ?>
-			<?else ?>
-			<?if $(var.Platform) = x64 ?>
-			<Merge Id="VCRedist" SourceFile="$(var.SolutionDir)lib\merge\Microsoft_VC143_CRT_x64.msm" DiskId="1" Language="0" />
-			<?else ?>
-			<Merge Id="VCRedist" SourceFile="$(var.SolutionDir)lib\merge\Microsoft_VC143_CRT_x86.msm" DiskId="1" Language="0" />
-			<?endif ?>
-			<?endif ?>
 			<Directory Id="$(var.PlatformProgramFilesFolder)">
 				<Directory Id="CompanyFolder" Name="$(var.Publisher)">
 					<Directory Id="INSTALLFOLDER" Name="$(var.ProductFolderName)">
@@ -436,9 +423,6 @@
 				<ComponentRef Id="LocalizationFilesInProgramDataFolder"/>
 				<ComponentRef Id="RemoveObsoleteRegistryValues"/>
 				<ComponentRef Id="RegisterForSafeMode" />
-			</Feature>
-			<Feature Id="VCRedist" Title="Visual C++ Runtime" AllowAdvertise="no" Display="hidden" Level="1">
-				<MergeRef Id="VCRedist" />
 			</Feature>
 			<ComponentRef Id="DefaultFilesInProgrammFolder" />
 		</Feature>

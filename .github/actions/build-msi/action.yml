@@ -42,3 +42,21 @@ runs:
           /p:VersionCommit=$commit `
           /m `
           /v:minimal
+
+    # Every project links the CRT statically (/MT), so the installer ships no VC runtime. Fail if a
+    # DLL starts importing one, because it would not load on machines without the VC redist.
+    - name: Check DLLs do not import the VC runtime
+      shell: pwsh
+      run: |
+        $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+        $dumpbin = & $vswhere -latest -find 'VC\Tools\MSVC\**\bin\Hostx64\x64\dumpbin.exe' | Select-Object -First 1
+        if (-not $dumpbin) { throw 'dumpbin.exe not found' }
+        $dlls = Get-ChildItem CredentialProvider, CredentialProviderFilter -Recurse -Filter *.dll |
+          Where-Object { $_.DirectoryName -like '*\bin\x64\${{ inputs.configuration }}' }
+        if ($dlls.Count -ne 2) { throw "Expected 2 DLLs, found $($dlls.Count)" }
+        foreach ($dll in $dlls) {
+          $imports = & $dumpbin /nologo /dependents $dll.FullName | Select-String -Pattern '^\s+\S+\.dll\s*$'
+          Write-Host "$($dll.Name): $(($imports | ForEach-Object { $_.Line.Trim() }) -join ', ')"
+          $crt = $imports | Where-Object { $_.Line -match '(?i)\b(vcruntime|msvcp|concrt)\w*\.dll' }
+          if ($crt) { throw "$($dll.Name) imports the VC runtime: $(($crt | ForEach-Object { $_.Line.Trim() }) -join ', ')" }
+        }

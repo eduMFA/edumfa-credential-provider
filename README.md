@@ -47,13 +47,25 @@ This performs the same steps the CI workflow uses:
 pwsh ./scripts/setup-dependencies.ps1
 ```
 
-### Formatting
+### Formatting and linting
 
 CI checks the C++ sources against ``.clang-format`` with clang-format 21. To format everything:
 
 ```
 git ls-files '*.cpp' '*.h' | xargs clang-format -i
 ```
+
+CI also runs clang-tidy 21 with the checks in ``.clang-tidy`` and fails on any finding.
+It runs on Linux against the MSVC, Windows SDK and ATL headers that [xwin](https://github.com/Jake-Shadle/xwin) downloads, which means accepting Microsoft's license:
+
+```
+pwsh ./scripts/setup-dependencies.ps1
+xwin --accept-license --temp --arch x86_64 --include-atl splat --output xwin
+git ls-files '*.cpp' | xargs -P"$(nproc)" -n1 clang-tidy --quiet --warnings-as-errors='*'
+```
+
+``compile_flags.txt`` mirrors the include paths and defines from the ``.vcxproj`` files. If they drift apart, the include errors fail the lint.
+On NixOS, use ``clang-tidy-unwrapped``: the wrapper adds Linux include paths.
 
 ### Code signing policy
 

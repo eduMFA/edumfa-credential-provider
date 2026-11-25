@@ -31,8 +31,8 @@
 #include "Convert.h"
 #include <credentialprovider.h>
 #include <tchar.h>
-#include <Wtsapi32.h>
-#include <Lm.h>
+#include <wtsapi32.h>
+#include <lm.h>
 #include <Translator.h>
 
 CProvider::CProvider() :

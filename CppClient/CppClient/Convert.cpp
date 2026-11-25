@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
+#include <stdexcept>
 #include <Windows.h>
 
 std::string Convert::ToString(const std::wstring& ws)
@@ -314,7 +315,12 @@ std::string Convert::BytesToHex(const unsigned char* data, const size_t dataSize
 
 std::vector<unsigned char> Convert::HexToBytes(const std::string& hexString)
 {
+	if (hexString.length() % 2 != 0)
+	{
+		throw std::invalid_argument("HexToBytes: hex string must have even length");
+	}
 	std::vector<unsigned char> binaryData;
+	binaryData.reserve(hexString.length() / 2);
 	for (size_t i = 0; i < hexString.length(); i += 2)
 	{
 		std::string byteString = hexString.substr(i, 2);

@@ -129,19 +129,11 @@ void CALLBACK WinHttpStatusCallback(
 	UNREFERENCED_PARAMETER(hInternet);
 	UNREFERENCED_PARAMETER(dwContext);
 
-	long lStatus = 0;
-	if (lpvStatusInformation != nullptr)
-	{
-		lStatus = *(long*)lpvStatusInformation;
-	}
-	string strInternetStatus = to_string(dwInternetStatus);
-	// Since this method is called multiple times for each request, log the extended info only for 12175 WINHTTP_CALLBACK_STATUS_SECURE_FAILURE
-	//DebugPrint("WinHttpStatusCallback - InternetStatus: " + strInternetStatus + ", StatusInformation: " + to_string(lStatus));
 	switch (dwInternetStatus)
 	{
 		case WINHTTP_CALLBACK_STATUS_SECURE_FAILURE:
 			// Log more detailed information for this error case
-			if (lpvStatusInformation && dwStatusInformationLength == sizeof(DWORD))
+			if (lpvStatusInformation && dwStatusInformationLength >= sizeof(DWORD))
 			{
 				DWORD statusFlags = *(DWORD*)lpvStatusInformation;
 				string strDetail;

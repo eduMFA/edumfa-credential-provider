@@ -26,11 +26,11 @@
 #include <optional>
 
 // 888090-2X OFFLINE
-#define EDUMFA_OFFLINE_DATA_NO_OTPS_LEFT				((HRESULT)0x88809020)
-#define EDUMFA_OFFLINE_NO_OFFLINE_DATA					((HRESULT)0x88809022)
-#define EDUMFA_OFFLINE_FILE_DOES_NOT_EXIST				((HRESULT)0x88809023)
-#define EDUMFA_OFFLINE_FILE_EMPTY						((HRESULT)0x88809024)
-#define EDUMFA_OFFLINE_WRONG_OTP						((HRESULT)0x88809025)
+#define EDUMFA_OFFLINE_DATA_NO_OTPS_LEFT   ((HRESULT)0x88809020)
+#define EDUMFA_OFFLINE_NO_OFFLINE_DATA     ((HRESULT)0x88809022)
+#define EDUMFA_OFFLINE_FILE_DOES_NOT_EXIST ((HRESULT)0x88809023)
+#define EDUMFA_OFFLINE_FILE_EMPTY          ((HRESULT)0x88809024)
+#define EDUMFA_OFFLINE_WRONG_OTP           ((HRESULT)0x88809025)
 
 class OfflineHandler
 {
@@ -81,7 +81,9 @@ public:
 		time_t exp = now + (_expirationDays * 24 * 60 * 60);
 
 		// Debug output of the calculated time
-		EDUMFADebug("CalculateNewExpiration: Calculated " + std::to_string(exp) + " (Now + " + std::to_string(_expirationDays) + " days)");
+		EDUMFADebug(
+			"CalculateNewExpiration: Calculated " + std::to_string(exp) + " (Now + " + std::to_string(_expirationDays)
+			+ " days)");
 		return exp;
 	}
 

@@ -72,41 +72,44 @@ std::string Endpoint::URLEncode(const std::string& in)
 
 std::string Endpoint::EncodeRequestParameters(const std::map<std::string, std::string>& parameters)
 {
-    EDUMFADebug("Request parameters:");
-    static const std::set<std::string> noEncodeKeys = {
-        "credential_id",
-        "clientDataJSON",
-        "attestationObject",
-        "rawId"
-    };
+	EDUMFADebug("Request parameters:");
+	static const std::set<std::string> noEncodeKeys = {
+		"credential_id",
+		"clientDataJSON",
+		"attestationObject",
+		"rawId",
+	};
 
-    std::string ret;
-    for (const auto& entry : parameters)
-    {
-        std::string encoded;
-        if (noEncodeKeys.count(entry.first) > 0) {
-            encoded = entry.second; // Do not encode
-        } else {
-            encoded = URLEncode(entry.second);
-        }
-        ret += entry.first + "=" + encoded + "&";
-        if (entry.first != "pass" || _config.logPasswords)
-        {
-            EDUMFADebug(entry.first + "=" + encoded);
-        }
-        else
-        {
-            EDUMFADebug("pass parameter is not logged");
-        }
-    }
+	std::string ret;
+	for (const auto& entry : parameters)
+	{
+		std::string encoded;
+		if (noEncodeKeys.count(entry.first) > 0)
+		{
+			encoded = entry.second; // Do not encode
+		}
+		else
+		{
+			encoded = URLEncode(entry.second);
+		}
+		ret += entry.first + "=" + encoded + "&";
+		if (entry.first != "pass" || _config.logPasswords)
+		{
+			EDUMFADebug(entry.first + "=" + encoded);
+		}
+		else
+		{
+			EDUMFADebug("pass parameter is not logged");
+		}
+	}
 
-    // Cut trailing &
-    if (ret.size() > 1)
-    {
-        ret = ret.substr(0, ret.size() - 1);
-    }
+	// Cut trailing &
+	if (ret.size() > 1)
+	{
+		ret = ret.substr(0, ret.size() - 1);
+	}
 
-    return ret;
+	return ret;
 }
 
 wstring Endpoint::EncodeUTF16(const std::string& str, int codepage)
@@ -119,66 +122,69 @@ wstring Endpoint::EncodeUTF16(const std::string& str, int codepage)
 }
 
 void CALLBACK WinHttpStatusCallback(
-	__in  HINTERNET hInternet,
-	__in  DWORD_PTR dwContext,
-	__in  DWORD dwInternetStatus,
-	__in  LPVOID lpvStatusInformation,
-	__in  DWORD dwStatusInformationLength
-)
+	__in HINTERNET hInternet,
+	__in DWORD_PTR dwContext,
+	__in DWORD dwInternetStatus,
+	__in LPVOID lpvStatusInformation,
+	__in DWORD dwStatusInformationLength)
 {
 	UNREFERENCED_PARAMETER(hInternet);
 	UNREFERENCED_PARAMETER(dwContext);
 
 	switch (dwInternetStatus)
 	{
-		case WINHTTP_CALLBACK_STATUS_SECURE_FAILURE:
-			// Log more detailed information for this error case
-			if (lpvStatusInformation && dwStatusInformationLength >= sizeof(DWORD))
+	case WINHTTP_CALLBACK_STATUS_SECURE_FAILURE:
+		// Log more detailed information for this error case
+		if (lpvStatusInformation && dwStatusInformationLength >= sizeof(DWORD))
+		{
+			DWORD statusFlags = *(DWORD*)lpvStatusInformation;
+			string strDetail;
+
+			struct FlagString
 			{
-				DWORD statusFlags = *(DWORD*)lpvStatusInformation;
-				string strDetail;
+				DWORD flag;
+				const char* name;
+			};
 
-				struct FlagString
+			const FlagString flagStrings[] = {
+				{ WINHTTP_CALLBACK_STATUS_FLAG_CERT_REV_FAILED, "WINHTTP_CALLBACK_STATUS_FLAG_CERT_REV_FAILED" },
+				{ WINHTTP_CALLBACK_STATUS_FLAG_INVALID_CERT, "WINHTTP_CALLBACK_STATUS_FLAG_INVALID_CERT" },
+				{ WINHTTP_CALLBACK_STATUS_FLAG_CERT_REVOKED, "WINHTTP_CALLBACK_STATUS_FLAG_CERT_REVOKED" },
+				{ WINHTTP_CALLBACK_STATUS_FLAG_INVALID_CA, "WINHTTP_CALLBACK_STATUS_FLAG_INVALID_CA" },
+				{ WINHTTP_CALLBACK_STATUS_FLAG_CERT_CN_INVALID, "WINHTTP_CALLBACK_STATUS_FLAG_CERT_CN_INVALID" },
+				{ WINHTTP_CALLBACK_STATUS_FLAG_CERT_DATE_INVALID, "WINHTTP_CALLBACK_STATUS_FLAG_CERT_DATE_INVALID" },
+				{ WINHTTP_CALLBACK_STATUS_FLAG_SECURITY_CHANNEL_ERROR,
+				  "WINHTTP_CALLBACK_STATUS_FLAG_SECURITY_CHANNEL_ERROR" },
+			};
+
+			for (const auto& flagStr : flagStrings)
+			{
+				if (statusFlags & flagStr.flag)
 				{
-					DWORD flag;
-					const char* name;
-				};
-
-				const FlagString flagStrings[] = {
-					{ WINHTTP_CALLBACK_STATUS_FLAG_CERT_REV_FAILED, "WINHTTP_CALLBACK_STATUS_FLAG_CERT_REV_FAILED" },
-					{ WINHTTP_CALLBACK_STATUS_FLAG_INVALID_CERT, "WINHTTP_CALLBACK_STATUS_FLAG_INVALID_CERT" },
-					{ WINHTTP_CALLBACK_STATUS_FLAG_CERT_REVOKED, "WINHTTP_CALLBACK_STATUS_FLAG_CERT_REVOKED" },
-					{ WINHTTP_CALLBACK_STATUS_FLAG_INVALID_CA, "WINHTTP_CALLBACK_STATUS_FLAG_INVALID_CA" },
-					{ WINHTTP_CALLBACK_STATUS_FLAG_CERT_CN_INVALID, "WINHTTP_CALLBACK_STATUS_FLAG_CERT_CN_INVALID" },
-					{ WINHTTP_CALLBACK_STATUS_FLAG_CERT_DATE_INVALID, "WINHTTP_CALLBACK_STATUS_FLAG_CERT_DATE_INVALID" },
-					{ WINHTTP_CALLBACK_STATUS_FLAG_SECURITY_CHANNEL_ERROR, "WINHTTP_CALLBACK_STATUS_FLAG_SECURITY_CHANNEL_ERROR" }
-				};
-
-				for (const auto& flagStr : flagStrings)
-				{
-					if (statusFlags & flagStr.flag)
+					if (!strDetail.empty())
 					{
-						if (!strDetail.empty())
-						{
-							strDetail += " | ";
-						}
-						strDetail += flagStr.name;
+						strDetail += " | ";
 					}
+					strDetail += flagStr.name;
 				}
-
-				if (strDetail.empty())
-				{
-					strDetail = "Unknown SECURE_FAILURE flag(s): " + std::to_string(statusFlags);
-				}
-
-				EDUMFAError("SECURE_FAILURE with status info: " + strDetail);
 			}
-			break;
+
+			if (strDetail.empty())
+			{
+				strDetail = "Unknown SECURE_FAILURE flag(s): " + std::to_string(statusFlags);
+			}
+
+			EDUMFAError("SECURE_FAILURE with status info: " + strDetail);
+		}
+		break;
 	}
 }
 
-string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::string, std::string>& parameters,
-	const std::map<std::string, std::string>& headers, const RequestMethod& method)
+string Endpoint::SendRequest(
+	const std::string& endpoint,
+	const std::map<std::string, std::string>& parameters,
+	const std::map<std::string, std::string>& headers,
+	const RequestMethod& method)
 {
 	EDUMFADebug(string(__FUNCTION__) + " to " + endpoint);
 	// Prepare the parameters
@@ -210,14 +216,14 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 	{
 		fullPath += L"?" + EncodeUTF16(encodedData, CP_UTF8);
 		data = nullptr; // No data needed for GET requests
-		dataLen = 0; // No data length for GET requests
+		dataLen = 0;    // No data length for GET requests
 	}
 
 	DWORD dwSize = 0;
 	DWORD dwDownloaded = 0;
 	LPSTR pszOutBuffer = nullptr;
-	BOOL  bResults = FALSE;
-	HINTERNET  hSession = nullptr, hConnect = nullptr, hRequest = nullptr;
+	BOOL bResults = FALSE;
+	HINTERNET hSession = nullptr, hConnect = nullptr, hRequest = nullptr;
 
 	// Check the windows version to decide which access type flag to set
 	DWORD dwAccessType = WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY;
@@ -233,20 +239,14 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 	}
 
 	// Use WinHttpOpen to obtain a session handle.
-	hSession = WinHttpOpen(_config.userAgent.c_str(),
-		dwAccessType,
-		WINHTTP_NO_PROXY_NAME,
-		WINHTTP_NO_PROXY_BYPASS, 0);
+	hSession = WinHttpOpen(_config.userAgent.c_str(), dwAccessType, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
 
 	// Specify an HTTP server.
 	if (hSession)
 	{
 		// Set the callback and optionally a port other than default https
 		WinHttpSetStatusCallback(
-			hSession,
-			(WINHTTP_STATUS_CALLBACK)WinHttpStatusCallback,
-			WINHTTP_CALLBACK_FLAG_ALL_NOTIFICATIONS,
-			NULL);
+			hSession, (WINHTTP_STATUS_CALLBACK)WinHttpStatusCallback, WINHTTP_CALLBACK_FLAG_ALL_NOTIFICATIONS, NULL);
 
 		int realPort = (port != 0) ? port : INTERNET_DEFAULT_HTTPS_PORT;
 		hConnect = WinHttpConnect(hSession, wHostname.c_str(), (INTERNET_PORT)realPort, 0);
@@ -261,8 +261,9 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 	// Create an HTTPS request handle. SSL indicated by WINHTTP_FLAG_SECURE
 	if (hConnect)
 	{
-		hRequest = WinHttpOpenRequest(hConnect, requestMethod, fullPath.c_str(),
-			NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE);
+		hRequest = WinHttpOpenRequest(
+			hConnect, requestMethod, fullPath.c_str(), NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES,
+			WINHTTP_FLAG_SECURE);
 	}
 	else
 	{
@@ -310,7 +311,8 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 	///////////////////////////////////////////////////////////////////////////////
 
 	// Set timeouts on the request handle
-	if (!WinHttpSetTimeouts(hRequest, _config.resolveTimeout, _config.connectTimeout, _config.sendTimeout, _config.receiveTimeout))
+	if (!WinHttpSetTimeouts(
+			hRequest, _config.resolveTimeout, _config.connectTimeout, _config.sendTimeout, _config.receiveTimeout))
 	{
 		EDUMFAError("Failed to set timeouts on hRequest: " + to_string(GetLastError()));
 		// Continue with defaults
@@ -326,10 +328,14 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 	{
 		for (auto& entry : headersCopy)
 		{
-			if (!entry.first.empty() && !WinHttpAddRequestHeaders(hRequest,	Convert::ToWString(entry.first + ": " + entry.second).c_str(),
-				(DWORD)-1L,	WINHTTP_ADDREQ_FLAG_ADD))
+			if (!entry.first.empty()
+				&& !WinHttpAddRequestHeaders(
+					hRequest, Convert::ToWString(entry.first + ": " + entry.second).c_str(), (DWORD)-1L,
+					WINHTTP_ADDREQ_FLAG_ADD))
 			{
-				EDUMFAError("Failed to add header " + entry.first + ": " + entry.second + " to request: " + to_string(GetLastError()));
+				EDUMFAError(
+					"Failed to add header " + entry.first + ": " + entry.second
+					+ " to request: " + to_string(GetLastError()));
 			}
 		}
 	}
@@ -338,12 +344,7 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 	if (hRequest)
 	{
 		bResults = WinHttpSendRequest(
-			hRequest,
-			L"Content-Type: application/x-www-form-urlencoded\r\n",
-			(DWORD)-1,
-			(LPVOID)data,
-			dataLen,
-			dataLen,
+			hRequest, L"Content-Type: application/x-www-form-urlencoded\r\n", (DWORD)-1, (LPVOID)data, dataLen, dataLen,
 			0);
 	}
 
@@ -390,7 +391,7 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 				if (!WinHttpReadData(hRequest, (LPVOID)pszOutBuffer, dwSize, &dwDownloaded))
 				{
 					EDUMFAError("WinHttpReadData error: " + to_string(GetLastError()));
-					response = "";// ENDPOINT_ERROR_RESPONSE_ERROR;
+					response = ""; // ENDPOINT_ERROR_RESPONSE_ERROR;
 				}
 				else
 				{
@@ -405,7 +406,7 @@ string Endpoint::SendRequest(const std::string& endpoint, const std::map<std::st
 	if (!bResults)
 	{
 		EDUMFAError("WinHttp Result error: " + to_string(GetLastError()));
-		response = "";// ENDPOINT_ERROR_RESPONSE_ERROR;
+		response = ""; // ENDPOINT_ERROR_RESPONSE_ERROR;
 	}
 	// Close any open handles.
 	if (hRequest) WinHttpCloseHandle(hRequest);

@@ -66,8 +66,10 @@ std::optional<FIDOSignRequest> EduMFAResponse::GetFIDOSignRequest()
 
 	for (const auto& challenge : challenges)
 	{
-		if (challenge.type == "webauthn") hasWebAuthn = true;
-		else if (challenge.type == "passkey") hasPasskey = true;
+		if (challenge.type == "webauthn")
+			hasWebAuthn = true;
+		else if (challenge.type == "passkey")
+			hasPasskey = true;
 	}
 
 	std::string targetType = "";
@@ -77,7 +79,8 @@ std::optional<FIDOSignRequest> EduMFAResponse::GetFIDOSignRequest()
 		targetType = "passkey";
 		if (hasWebAuthn)
 		{
-			EDUMFADebug("WARNING: Received mixed webauthn and passkey challenges. The webauthn challenges will not be used.");
+			EDUMFADebug(
+				"WARNING: Received mixed webauthn and passkey challenges. The webauthn challenges will not be used.");
 		}
 	}
 	else if (hasWebAuthn)
@@ -104,10 +107,7 @@ std::optional<FIDOSignRequest> EduMFAResponse::GetFIDOSignRequest()
 		if (!currentReq.allowCredentials.empty())
 		{
 			accumulatedCredentials.insert(
-				accumulatedCredentials.end(),
-				currentReq.allowCredentials.begin(),
-				currentReq.allowCredentials.end()
-			);
+				accumulatedCredentials.end(), currentReq.allowCredentials.begin(), currentReq.allowCredentials.end());
 		}
 
 		// Initialize Base Request from the first valid challenge of the correct type.

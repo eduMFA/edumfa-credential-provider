@@ -24,8 +24,8 @@
 
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 
-#define EDUMFAError(message)				Logger::Get().Log(message, __FILENAME__, __LINE__, false)
-#define EDUMFADebug(message)				Logger::Get().Log(message, __FILENAME__, __LINE__, true)
+#define EDUMFAError(message) Logger::Get().Log(message, __FILENAME__, __LINE__, false)
+#define EDUMFADebug(message) Logger::Get().Log(message, __FILENAME__, __LINE__, true)
 
 // Singleton logger class that writes to a file on C: and to OutputDebugString
 class Logger

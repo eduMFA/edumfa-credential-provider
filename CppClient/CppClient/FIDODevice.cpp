@@ -31,7 +31,6 @@
 #include "FIDOException.h"
 #include "FIDORegistrationResponse.h"
 
-
 constexpr size_t maxDevices = 64;
 
 struct FidoDevDeleter
@@ -82,417 +81,417 @@ using unique_fido_dev_info_t = std::unique_ptr<fido_dev_info_t, FidoDevInfoDelet
 
 namespace
 {
-	constexpr auto COSE_PUB_KEY_ALG = 3;
-	constexpr auto COSE_PUB_KEY_X = -2;
-	constexpr auto COSE_PUB_KEY_Y = -3;
-	constexpr auto COSE_PUB_KEY_E = -2;
-	constexpr auto COSE_PUB_KEY_N = -1;
+constexpr auto COSE_PUB_KEY_ALG = 3;
+constexpr auto COSE_PUB_KEY_X = -2;
+constexpr auto COSE_PUB_KEY_Y = -3;
+constexpr auto COSE_PUB_KEY_E = -2;
+constexpr auto COSE_PUB_KEY_N = -1;
 
-	static void FidoLogRedirect(const char* message)
+static void FidoLogRedirect(const char* message)
+{
+	if (message)
 	{
-		if (message)
+		std::string msg(message);
+		// Remove trailing newline if present to avoid double spacing in logs
+		if (!msg.empty() && msg.back() == '\n')
 		{
-			std::string msg(message);
-			// Remove trailing newline if present to avoid double spacing in logs
-			if (!msg.empty() && msg.back() == '\n')
+			msg.pop_back();
+		}
+		EDUMFADebug("[libfido2] " + msg);
+	}
+}
+
+static int EcKeyFromCBOR(const std::string& cborPubKey, EC_KEY** ecKey, int* algorithm)
+{
+	int res = FIDO_OK;
+	std::vector<unsigned char> pubKeyBytes;
+	if (cborPubKey.length() % 2 == 0)
+	{
+		// hex encoded
+		pubKeyBytes = Convert::HexToBytes(cborPubKey);
+	}
+	else
+	{
+		pubKeyBytes = Convert::Base64URLDecode(cborPubKey);
+	}
+
+	struct cbor_load_result result;
+	cbor_item_t* map = cbor_load(pubKeyBytes.data(), pubKeyBytes.size(), &result);
+
+	if (map == NULL)
+	{
+		EDUMFAError("Failed to parse CBOR public key");
+		return FIDO_ERR_INVALID_ARGUMENT;
+	}
+	if (!cbor_isa_map(map))
+	{
+		EDUMFAError("CBOR public key is not a map");
+		cbor_decref(&map);
+		return FIDO_ERR_INVALID_ARGUMENT;
+	}
+
+	size_t size = cbor_map_size(map);
+	cbor_pair* pairs = cbor_map_handle(map);
+	//cbor_map
+	// Find the algorithm
+	int alg = 0;
+	for (int i = 0; i < size; i++)
+	{
+		if (cbor_isa_uint(pairs[i].key) && cbor_get_uint8(pairs[i].key) == COSE_PUB_KEY_ALG)
+		{
+			if (cbor_isa_negint(pairs[i].value))
 			{
-				msg.pop_back();
+				alg = -1 - cbor_get_int(pairs[i].value);
 			}
-			EDUMFADebug("[libfido2] " + msg);
 		}
 	}
 
-	static int EcKeyFromCBOR(
-		const std::string& cborPubKey,
-		EC_KEY** ecKey,
-		int* algorithm)
+	// Depending on the algorithm, find the values to build the public key
+	if (alg == COSE_ES256)
 	{
-		int res = FIDO_OK;
-		std::vector<unsigned char> pubKeyBytes;
-		if (cborPubKey.length() % 2 == 0)
+		*algorithm = alg;
+		std::vector<uint8_t> x, y;
+		for (int i = 0; i < size; i++)
 		{
-			// hex encoded
-			pubKeyBytes = Convert::HexToBytes(cborPubKey);
-		}
-		else
-		{
-			pubKeyBytes = Convert::Base64URLDecode(cborPubKey);
+			if (cbor_isa_negint(pairs[i].key))
+			{
+				int key = -1 - cbor_get_int(pairs[i].key);
+				if (key == COSE_PUB_KEY_X)
+				{
+					if (cbor_isa_bytestring(pairs[i].value))
+					{
+						x = std::vector<uint8_t>(
+							cbor_bytestring_handle(pairs[i].value),
+							cbor_bytestring_handle(pairs[i].value) + cbor_bytestring_length(pairs[i].value));
+					}
+				}
+				else if (key == COSE_PUB_KEY_Y)
+				{
+					if (cbor_isa_bytestring(pairs[i].value))
+					{
+						y = std::vector<uint8_t>(
+							cbor_bytestring_handle(pairs[i].value),
+							cbor_bytestring_handle(pairs[i].value) + cbor_bytestring_length(pairs[i].value));
+					}
+				}
+			}
 		}
 
-		struct cbor_load_result result;
-		cbor_item_t* map = cbor_load(pubKeyBytes.data(), pubKeyBytes.size(), &result);
-
-		if (map == NULL)
+		if (x.size() != 32)
 		{
-			EDUMFAError("Failed to parse CBOR public key");
+			EDUMFAError("COSE_PUB_KEY_X has the wrong size. Expected 32, actual: " + std::to_string(x.size()));
+			cbor_decref(&map);
 			return FIDO_ERR_INVALID_ARGUMENT;
 		}
-		if (!cbor_isa_map(map))
+		if (y.size() != 32)
 		{
-			EDUMFAError("CBOR public key is not a map");
+			EDUMFAError("COSE_PUB_KEY_Y has the wrong size. Expected 32, actual: " + std::to_string(y.size()));
 			cbor_decref(&map);
 			return FIDO_ERR_INVALID_ARGUMENT;
 		}
 
-		size_t size = cbor_map_size(map);
-		cbor_pair* pairs = cbor_map_handle(map);
-		//cbor_map
-		// Find the algorithm
-		int alg = 0;
-		for (int i = 0; i < size; i++)
+		// secp256r1 is called prime256v1 in OpenSSL (RFC 5480, Section 2.1.1.1)
+		*ecKey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+		BIGNUM* bnx = BN_new();
+		BN_bin2bn(x.data(), x.size(), bnx);
+		BIGNUM* bny = BN_new();
+		BN_bin2bn(y.data(), y.size(), bny);
+		EC_KEY_set_public_key_affine_coordinates(*ecKey, bnx, bny);
+		BN_free(bnx);
+		BN_free(bny);
+	}
+	else
+	{
+		// TODO implement other COSE algorithms if supported by eduMFA
+		EDUMFAError("Unimplemented alg: " + std::to_string(alg));
+		res = FIDO_ERR_INVALID_ARGUMENT;
+	}
+
+	cbor_decref(&map);
+	return res;
+}
+
+static unique_fido_dev_t OpenFidoDevice(const std::string& devicePath, int& outError)
+{
+	outError = FIDO_OK;
+	if (devicePath.empty())
+	{
+		EDUMFAError("No device path provided");
+		outError = FIDO_ERR_INVALID_ARGUMENT;
+		return nullptr;
+	}
+
+	unique_fido_dev_t dev(fido_dev_new());
+	if (!dev)
+	{
+		EDUMFAError("fido_dev_new failed.");
+		outError = FIDO_ERR_INTERNAL;
+		return nullptr;
+	}
+
+	int res = fido_dev_open(dev.get(), devicePath.c_str());
+	if (res != FIDO_OK)
+	{
+		EDUMFAError("fido_dev_open: " + std::string(fido_strerr(res)) + " code: " + std::to_string(res));
+		outError = FIDO_ERR_INTERNAL;
+		return nullptr;
+	}
+
+	return dev;
+}
+
+// Retrieve a map of Resident Keys and their Username/DisplayName on the device for the given RPID
+static std::map<std::string, std::pair<std::string, std::string>> GetResidentKeyMap(
+	const std::string& devicePath,
+	const std::string& pin,
+	const std::string& rpId)
+{
+	std::map<std::string, std::pair<std::string, std::string>> rkMap;
+	int res = FIDO_OK;
+
+	auto dev = OpenFidoDevice(devicePath, res);
+	if (!dev || res != FIDO_OK) return rkMap;
+
+	fido_credman_rk_t* rk = fido_credman_rk_new();
+	if (rk)
+	{
+		// This requires the PIN!
+		auto ret = fido_credman_get_dev_rk(dev.get(), rpId.c_str(), rk, pin.empty() ? NULL : pin.c_str());
+		if (ret == FIDO_OK)
 		{
-			if (cbor_isa_uint(pairs[i].key) && cbor_get_uint8(pairs[i].key) == COSE_PUB_KEY_ALG)
+			size_t count = fido_credman_rk_count(rk);
+			for (size_t i = 0; i < count; i++)
 			{
-				if (cbor_isa_negint(pairs[i].value))
-				{
-					alg = -1 - cbor_get_int(pairs[i].value);
-				}
-			}
-		}
+				const fido_cred_t* cred = fido_credman_rk(rk, i);
 
-		// Depending on the algorithm, find the values to build the public key
-		if (alg == COSE_ES256)
-		{
-			*algorithm = alg;
-			std::vector<uint8_t> x, y;
-			for (int i = 0; i < size; i++)
-			{
-				if (cbor_isa_negint(pairs[i].key))
-				{
-					int key = -1 - cbor_get_int(pairs[i].key);
-					if (key == COSE_PUB_KEY_X)
-					{
-						if (cbor_isa_bytestring(pairs[i].value))
-						{
-							x = std::vector<uint8_t>(cbor_bytestring_handle(pairs[i].value), cbor_bytestring_handle(pairs[i].value) + cbor_bytestring_length(pairs[i].value));
-						}
-					}
-					else if (key == COSE_PUB_KEY_Y)
-					{
-						if (cbor_isa_bytestring(pairs[i].value))
-						{
-							y = std::vector<uint8_t>(cbor_bytestring_handle(pairs[i].value), cbor_bytestring_handle(pairs[i].value) + cbor_bytestring_length(pairs[i].value));
-						}
-					}
-				}
-			}
+				const unsigned char* ptrId = fido_cred_id_ptr(cred);
+				size_t lenId = fido_cred_id_len(cred);
+				std::string sId = Convert::Base64URLEncode(ptrId, lenId);
 
-			if (x.size() != 32)
-			{
-				EDUMFAError("COSE_PUB_KEY_X has the wrong size. Expected 32, actual: " + std::to_string(x.size()));
-				cbor_decref(&map);
-				return FIDO_ERR_INVALID_ARGUMENT;
-			}
-			if (y.size() != 32)
-			{
-				EDUMFAError("COSE_PUB_KEY_Y has the wrong size. Expected 32, actual: " + std::to_string(y.size()));
-				cbor_decref(&map);
-				return FIDO_ERR_INVALID_ARGUMENT;
-			}
+				std::string sUser = fido_cred_user_name(cred) ? fido_cred_user_name(cred) : "";
+				std::string sDisplay = fido_cred_display_name(cred) ? fido_cred_display_name(cred) : "";
 
-			// secp256r1 is called prime256v1 in OpenSSL (RFC 5480, Section 2.1.1.1)
-			*ecKey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-			BIGNUM* bnx = BN_new();
-			BN_bin2bn(x.data(), x.size(), bnx);
-			BIGNUM* bny = BN_new();
-			BN_bin2bn(y.data(), y.size(), bny);
-			EC_KEY_set_public_key_affine_coordinates(*ecKey, bnx, bny);
-			BN_free(bnx);
-			BN_free(bny);
+				rkMap[sId] = { sUser, sDisplay };
+			}
 		}
 		else
 		{
-			// TODO implement other COSE algorithms if supported by eduMFA
-			EDUMFAError("Unimplemented alg: " + std::to_string(alg));
-			res = FIDO_ERR_INVALID_ARGUMENT;
+			EDUMFADebug(
+				"fido_credman_get_dev_rk failed (device might not support it or PIN invalid): "
+				+ std::string(fido_strerr(ret)) + " code: " + std::to_string(ret));
 		}
+		fido_credman_rk_free(&rk);
+	}
+	return rkMap;
+}
 
-		cbor_decref(&map);
-		return res;
+static int GetAssert(
+	const FIDOSignRequest& signRequest,
+	const std::string& origin,
+	const std::string& pin,
+	const std::string& devicePath,
+	fido_assert_t** assert,
+	std::vector<unsigned char>& clientDataOut)
+{
+	int res = FIDO_OK;
+	auto dev = OpenFidoDevice(devicePath, res);
+
+	// Create assertion
+	if ((*assert = fido_assert_new()) == NULL)
+	{
+		EDUMFAError("fido_assert_new failed.");
+		return FIDO_ERR_INTERNAL;
 	}
 
-	static unique_fido_dev_t OpenFidoDevice(const std::string& devicePath, int& outError)
+	// Allow Creds
+	for (auto& allowCred : signRequest.allowCredentials)
 	{
-		outError = FIDO_OK;
-		if (devicePath.empty())
-		{
-			EDUMFAError("No device path provided");
-			outError = FIDO_ERR_INVALID_ARGUMENT;
-			return nullptr;
-		}
-
-		unique_fido_dev_t dev(fido_dev_new());
-		if (!dev)
-		{
-			EDUMFAError("fido_dev_new failed.");
-			outError = FIDO_ERR_INTERNAL;
-			return nullptr;
-		}
-
-		int res = fido_dev_open(dev.get(), devicePath.c_str());
+		EDUMFADebug("Adding allow credential with id: " + allowCred.id);
+		auto cred = Convert::Base64URLDecode(allowCred.id);
+		res = fido_assert_allow_cred(*assert, cred.data(), cred.size());
 		if (res != FIDO_OK)
 		{
-			EDUMFAError("fido_dev_open: " + std::string(fido_strerr(res)) + " code: " + std::to_string(res));
-			outError = FIDO_ERR_INTERNAL;
-			return nullptr;
+			EDUMFADebug("fido_assert_allow_cred: " + std::string(fido_strerr(res)) + " code: " + std::to_string(res));
 		}
-
-		return dev;
 	}
 
-	// Retrieve a map of Resident Keys and their Username/DisplayName on the device for the given RPID
-	static std::map<std::string, std::pair<std::string, std::string>> GetResidentKeyMap(
-		const std::string& devicePath,
-		const std::string& pin,
-		const std::string& rpId)
+	// Passkey challenges are not bound to a specific credential, so allowCredentials are empty. The encoding of the challenge is different in this case.
+	bool isPasskeyChallenge = signRequest.allowCredentials.empty();
+	std::string challenge = signRequest.challenge;
+	if (signRequest.type == "passkey" || isPasskeyChallenge)
 	{
-		std::map<std::string, std::pair<std::string, std::string>> rkMap;
-		int res = FIDO_OK;
-
-		auto dev = OpenFidoDevice(devicePath, res);
-		if (!dev || res != FIDO_OK) return rkMap;
-
-		fido_credman_rk_t* rk = fido_credman_rk_new();
-		if (rk)
-		{
-			// This requires the PIN!
-			auto ret = fido_credman_get_dev_rk(dev.get(), rpId.c_str(), rk, pin.empty() ? NULL : pin.c_str());
-			if (ret == FIDO_OK)
-			{
-				size_t count = fido_credman_rk_count(rk);
-				for (size_t i = 0; i < count; i++)
-				{
-					const fido_cred_t* cred = fido_credman_rk(rk, i);
-
-					const unsigned char* ptrId = fido_cred_id_ptr(cred);
-					size_t lenId = fido_cred_id_len(cred);
-					std::string sId = Convert::Base64URLEncode(ptrId, lenId);
-
-					std::string sUser = fido_cred_user_name(cred) ? fido_cred_user_name(cred) : "";
-					std::string sDisplay = fido_cred_display_name(cred) ? fido_cred_display_name(cred) : "";
-
-					rkMap[sId] = { sUser, sDisplay };
-				}
-			}
-			else
-			{
-				EDUMFADebug("fido_credman_get_dev_rk failed (device might not support it or PIN invalid): " + std::string(fido_strerr(ret)) + " code: " + std::to_string(ret));
-			}
-			fido_credman_rk_free(&rk);
-		}
-		return rkMap;
+		std::vector<unsigned char> bytes(signRequest.challenge.begin(), signRequest.challenge.end());
+		challenge = Convert::Base64URLEncode(bytes.data(), bytes.size());
+	}
+	std::string cData = "{\"type\": \"webauthn.get\", \"challenge\": \"" + challenge + "\", \"origin\": \"" + origin
+						+ "\", \"crossOrigin\": false}";
+	clientDataOut = std::vector<unsigned char>(cData.begin(), cData.end());
+	res = fido_assert_set_clientdata(*assert, clientDataOut.data(), clientDataOut.size());
+	if (res != FIDO_OK)
+	{
+		EDUMFADebug("fido_assert_set_clientdata: " + std::string(fido_strerr(res)) + " code: " + std::to_string(res));
 	}
 
-	static int GetAssert(
-		const FIDOSignRequest& signRequest,
-		const std::string& origin,
-		const std::string& pin,
-		const std::string& devicePath,
-		fido_assert_t** assert,
-		std::vector<unsigned char>& clientDataOut)
+	// RP
+	res = fido_assert_set_rp(*assert, signRequest.rpId.c_str());
+	if (res != FIDO_OK)
 	{
-		int res = FIDO_OK;
-		auto dev = OpenFidoDevice(devicePath, res);
+		EDUMFADebug("fido_assert_set_rp: " + std::string(fido_strerr(res)) + " code: " + std::to_string(res));
+	}
 
-		// Create assertion
-		if ((*assert = fido_assert_new()) == NULL)
-		{
-			EDUMFAError("fido_assert_new failed.");
-			return FIDO_ERR_INTERNAL;
-		}
-
-		// Allow Creds
-		for (auto& allowCred : signRequest.allowCredentials)
-		{
-			EDUMFADebug("Adding allow credential with id: " + allowCred.id);
-			auto cred = Convert::Base64URLDecode(allowCred.id);
-			res = fido_assert_allow_cred(*assert, cred.data(), cred.size());
-			if (res != FIDO_OK)
-			{
-				EDUMFADebug("fido_assert_allow_cred: " + std::string(fido_strerr(res)) + " code: " + std::to_string(res));
-			}
-		}
-
-		// Passkey challenges are not bound to a specific credential, so allowCredentials are empty. The encoding of the challenge is different in this case.
-		bool isPasskeyChallenge = signRequest.allowCredentials.empty();
-		std::string challenge = signRequest.challenge;
-		if (signRequest.type == "passkey" || isPasskeyChallenge)
-		{
-			std::vector<unsigned char> bytes(signRequest.challenge.begin(), signRequest.challenge.end());
-			challenge = Convert::Base64URLEncode(bytes.data(), bytes.size());
-		}
-		std::string cData = "{\"type\": \"webauthn.get\", \"challenge\": \"" + challenge + "\", \"origin\": \"" + origin + "\", \"crossOrigin\": false}";
-		clientDataOut = std::vector<unsigned char>(cData.begin(), cData.end());
-		res = fido_assert_set_clientdata(*assert, clientDataOut.data(), clientDataOut.size());
-		if (res != FIDO_OK)
-		{
-			EDUMFADebug("fido_assert_set_clientdata: " + std::string(fido_strerr(res)) + " code: " + std::to_string(res));
-		}
-
-		// RP
-		res = fido_assert_set_rp(*assert, signRequest.rpId.c_str());
-		if (res != FIDO_OK)
-		{
-			EDUMFADebug("fido_assert_set_rp: " + std::string(fido_strerr(res)) + " code: " + std::to_string(res));
-		}
-
-		// Extensions TODO
-		/*res = fido_assert_set_extensions(*assert, NULL);
+	// Extensions TODO
+	/*res = fido_assert_set_extensions(*assert, NULL);
 		if (res != FIDO_OK)
 		{
 			EDUMFADebug("fido_assert_set_extensions: " + std::string(fido_strerr(res)) + " code: " + std::to_string(res));
 		}*/
 
-		// User verification
-		bool hasUV = fido_dev_has_uv(dev.get());
-		EDUMFADebug("Device has user verification: " + std::to_string(hasUV) + " and request is: " + signRequest.userVerification);
+	// User verification
+	bool hasUV = fido_dev_has_uv(dev.get());
+	EDUMFADebug(
+		"Device has user verification: " + std::to_string(hasUV) + " and request is: " + signRequest.userVerification);
 
-		if (hasUV && signRequest.userVerification == "discouraged")
-		{
-			res = fido_assert_set_uv(*assert, FIDO_OPT_FALSE);
-			if (res != FIDO_OK)
-			{
-				EDUMFADebug("fido_assert_set_uv: " + std::string(fido_strerr(res)) + " code: " + std::to_string(res));
-			}
-			else
-			{
-				EDUMFADebug("User verification set to 'discouraged'");
-			}
-		}
-		// Get assert and close
-		res = fido_dev_get_assert(dev.get(), *assert, pin.empty() ? NULL : pin.c_str());
-		return res;
-	}
-
-	inline bool CborAddItemToMap(
-		cbor_item_t* map,
-		const std::string& key,
-		cbor_item_t* (*valueFactory)(const void*, size_t),
-		const void* valueData,
-		size_t valueSize)
+	if (hasUV && signRequest.userVerification == "discouraged")
 	{
-		if (!map || !cbor_isa_map(map))
+		res = fido_assert_set_uv(*assert, FIDO_OPT_FALSE);
+		if (res != FIDO_OK)
 		{
-			return false;
+			EDUMFADebug("fido_assert_set_uv: " + std::string(fido_strerr(res)) + " code: " + std::to_string(res));
 		}
-
-		cbor_item_t* cbor_key = cbor_build_string(key.c_str());
-		if (!cbor_key)
+		else
 		{
-			return false;
+			EDUMFADebug("User verification set to 'discouraged'");
 		}
-
-		cbor_item_t* cbor_value = valueFactory(valueData, valueSize);
-		if (!cbor_value)
-		{
-			cbor_decref(&cbor_key);
-			return false;
-		}
-
-		struct cbor_pair pair {};
-		pair.key = cbor_key;
-		pair.value = cbor_value;
-
-		if (!cbor_map_add(map, pair))
-		{
-			cbor_decref(&cbor_key);
-			cbor_decref(&cbor_value);
-			return false;
-		}
-
-		return true;
 	}
-
-	inline bool CborAddBytesToMap(cbor_item_t* map, const std::string& key, const std::vector<unsigned char>& value)
-	{
-		return CborAddItemToMap(
-			map,
-			key,
-			[](const void* data, size_t size) { return cbor_build_bytestring(static_cast<const unsigned char*>(data), size); },
-			value.data(),
-			value.size()
-		);
-	}
-
-	inline bool CborAddStringToMap(cbor_item_t* map, const std::string& key, const std::string& value)
-	{
-		return CborAddItemToMap(
-			map,
-			key,
-			[](const void* data, size_t size) { return cbor_build_string(static_cast<const char*>(data)); },
-			value.c_str(),
-			value.size()
-		);
-	}
-
-	inline std::vector<unsigned char> CborMapToBytes(cbor_item_t* map)
-	{
-		unsigned char* buffer = nullptr;
-		size_t buffer_size = 0;
-		if (!map)
-		{
-			return {};
-		}
-		buffer_size = cbor_serialize_alloc(map, &buffer, &buffer_size);
-		if (buffer_size == 0 || buffer == nullptr)
-		{
-			return {};
-		}
-		std::vector<unsigned char> result(buffer, buffer + buffer_size);
-		free(buffer); // libcbor uses malloc/free
-		return result;
-	}
-
-	inline bool CborAddMapToMap(cbor_item_t* destMap, const std::string& key, cbor_item_t* srcMap)
-	{
-		if (!destMap || !srcMap || !cbor_isa_map(destMap) || !cbor_isa_map(srcMap))
-		{
-			return false;
-		}
-
-		cbor_item_t* srcMapCopy = cbor_copy(srcMap);
-		if (!srcMapCopy)
-		{
-			return false;
-		}
-
-		cbor_item_t* cbor_key = cbor_build_string(key.c_str());
-		if (!cbor_key)
-		{
-			cbor_decref(&srcMapCopy);
-			return false;
-		}
-
-		struct cbor_pair pair {};
-		pair.key = cbor_key;
-		pair.value = srcMapCopy;
-
-		if (!cbor_map_add(destMap, pair))
-		{
-			cbor_decref(&cbor_key);
-			cbor_decref(&srcMapCopy);
-			return false;
-		}
-
-		return true;
-	}
-
-	inline cbor_item_t* CborMapFromBytes(const std::vector<unsigned char>& data)
-	{
-		if (data.empty())
-		{
-			return nullptr;
-		}
-		struct cbor_load_result result;
-		cbor_item_t* item = cbor_load(data.data(), data.size(), &result);
-		if (!item || !cbor_isa_map(item))
-		{
-			if (item) cbor_decref(&item);
-			return nullptr;
-		}
-		return item;
-	}
+	// Get assert and close
+	res = fido_dev_get_assert(dev.get(), *assert, pin.empty() ? NULL : pin.c_str());
+	return res;
 }
+
+inline bool CborAddItemToMap(
+	cbor_item_t* map,
+	const std::string& key,
+	cbor_item_t* (*valueFactory)(const void*, size_t),
+	const void* valueData,
+	size_t valueSize)
+{
+	if (!map || !cbor_isa_map(map))
+	{
+		return false;
+	}
+
+	cbor_item_t* cbor_key = cbor_build_string(key.c_str());
+	if (!cbor_key)
+	{
+		return false;
+	}
+
+	cbor_item_t* cbor_value = valueFactory(valueData, valueSize);
+	if (!cbor_value)
+	{
+		cbor_decref(&cbor_key);
+		return false;
+	}
+
+	struct cbor_pair pair{};
+	pair.key = cbor_key;
+	pair.value = cbor_value;
+
+	if (!cbor_map_add(map, pair))
+	{
+		cbor_decref(&cbor_key);
+		cbor_decref(&cbor_value);
+		return false;
+	}
+
+	return true;
+}
+
+inline bool CborAddBytesToMap(cbor_item_t* map, const std::string& key, const std::vector<unsigned char>& value)
+{
+	return CborAddItemToMap(
+		map, key,
+		[](const void* data, size_t size) {
+			return cbor_build_bytestring(static_cast<const unsigned char*>(data), size);
+		},
+		value.data(), value.size());
+}
+
+inline bool CborAddStringToMap(cbor_item_t* map, const std::string& key, const std::string& value)
+{
+	return CborAddItemToMap(
+		map, key, [](const void* data, size_t size) { return cbor_build_string(static_cast<const char*>(data)); },
+		value.c_str(), value.size());
+}
+
+inline std::vector<unsigned char> CborMapToBytes(cbor_item_t* map)
+{
+	unsigned char* buffer = nullptr;
+	size_t buffer_size = 0;
+	if (!map)
+	{
+		return {};
+	}
+	buffer_size = cbor_serialize_alloc(map, &buffer, &buffer_size);
+	if (buffer_size == 0 || buffer == nullptr)
+	{
+		return {};
+	}
+	std::vector<unsigned char> result(buffer, buffer + buffer_size);
+	free(buffer); // libcbor uses malloc/free
+	return result;
+}
+
+inline bool CborAddMapToMap(cbor_item_t* destMap, const std::string& key, cbor_item_t* srcMap)
+{
+	if (!destMap || !srcMap || !cbor_isa_map(destMap) || !cbor_isa_map(srcMap))
+	{
+		return false;
+	}
+
+	cbor_item_t* srcMapCopy = cbor_copy(srcMap);
+	if (!srcMapCopy)
+	{
+		return false;
+	}
+
+	cbor_item_t* cbor_key = cbor_build_string(key.c_str());
+	if (!cbor_key)
+	{
+		cbor_decref(&srcMapCopy);
+		return false;
+	}
+
+	struct cbor_pair pair{};
+	pair.key = cbor_key;
+	pair.value = srcMapCopy;
+
+	if (!cbor_map_add(destMap, pair))
+	{
+		cbor_decref(&cbor_key);
+		cbor_decref(&srcMapCopy);
+		return false;
+	}
+
+	return true;
+}
+
+inline cbor_item_t* CborMapFromBytes(const std::vector<unsigned char>& data)
+{
+	if (data.empty())
+	{
+		return nullptr;
+	}
+	struct cbor_load_result result;
+	cbor_item_t* item = cbor_load(data.data(), data.size(), &result);
+	if (!item || !cbor_isa_map(item))
+	{
+		if (item) cbor_decref(&item);
+		return nullptr;
+	}
+	return item;
+}
+} // namespace
 
 std::optional<FIDODevice> FIDODevice::GetWinHello()
 {
@@ -600,7 +599,9 @@ FIDODevice::FIDODevice(const fido_dev_info_t* devinfo, bool log)
 		_hasUV = fido_dev_has_uv(dev.get());
 		GetDeviceInfo();
 		if (log)
-			EDUMFADebug("New FIDO device: " + ToString() + " hasPin: " + std::to_string(_hasPin) + " isWinHello: " + std::to_string(_isWinHello));
+			EDUMFADebug(
+				"New FIDO device: " + ToString() + " hasPin: " + std::to_string(_hasPin)
+				+ " isWinHello: " + std::to_string(_isWinHello));
 	}
 }
 
@@ -724,8 +725,7 @@ int FIDODevice::Sign(
 	fido_assert_t* assert = nullptr;
 	std::vector<unsigned char> vecClientData;
 
-	if (libfidoDebug)
-		fido_set_log_handler(FidoLogRedirect);
+	if (libfidoDebug) fido_set_log_handler(FidoLogRedirect);
 
 	// 1. Get Assertions (User Touch)
 	int res = GetAssert(signRequest, origin, pin, _path, &assert, vecClientData);
@@ -745,10 +745,12 @@ int FIDODevice::Sign(
 		std::map<std::string, std::pair<std::string, std::string>> names;
 		if (count > 0 && !pin.empty() && !_isWinHello)
 		{
-			try {
+			try
+			{
 				names = GetResidentKeyMap(_path, pin, signRequest.rpId);
 			}
-			catch (...) {
+			catch (...)
+			{
 				EDUMFADebug("Exception while fetching resident key metadata.");
 			}
 		}
@@ -821,8 +823,7 @@ int FIDODevice::SignAndVerifyAssertion(
 	std::string& serialUsed) const
 {
 	EDUMFADebug("FIDODevice::SignAndVerifyAssertion with device " + this->ToString());
-	if (libfidoDebug)
-		fido_set_log_handler(FidoLogRedirect);
+	if (libfidoDebug) fido_set_log_handler(FidoLogRedirect);
 	// Make a signRequest from the offlineData
 	FIDOSignRequest signRequest;
 	signRequest.rpId = offlineData.front().rpId;
@@ -831,7 +832,9 @@ int FIDODevice::SignAndVerifyAssertion(
 	{
 		if (item.rpId != signRequest.rpId)
 		{
-			EDUMFAError("Offline data for ID " + item.credId + " has different rpId. Expected: " + signRequest.rpId + ", actual: " + item.rpId);
+			EDUMFAError(
+				"Offline data for ID " + item.credId + " has different rpId. Expected: " + signRequest.rpId
+				+ ", actual: " + item.rpId);
 			EDUMFAError("The data will not be used for offline authentication");
 		}
 		else
@@ -938,8 +941,7 @@ std::optional<FIDORegistrationResponse> FIDODevice::Register(
 		throw FIDOException("No device path available to register credential.");
 	}
 
-	if (libfidoDebug)
-		fido_set_log_handler(FidoLogRedirect);
+	if (libfidoDebug) fido_set_log_handler(FidoLogRedirect);
 
 	unique_fido_dev_t dev(fido_dev_new());
 	if (!dev)
@@ -975,7 +977,8 @@ std::optional<FIDORegistrationResponse> FIDODevice::Register(
 		bool algoFound = false;
 		for (const auto& item : registration.pubKeyCredParams)
 		{
-			if (std::find(_supportedAlgorithms.begin(), _supportedAlgorithms.end(), item.second) != _supportedAlgorithms.end())
+			if (std::find(_supportedAlgorithms.begin(), _supportedAlgorithms.end(), item.second)
+				!= _supportedAlgorithms.end())
 			{
 				type = item.second;
 				algoFound = true;
@@ -1016,7 +1019,7 @@ std::optional<FIDORegistrationResponse> FIDODevice::Register(
 		challenge = Convert::Base64URLEncode(bytes.data(), bytes.size());
 	}
 	std::string clientData = "{ \"type\":\"webauthn.create\", \"challenge\" : \"" + challenge + "\", \"origin\" : \""
-		+ registration.rpId + "\", \"crossOrigin\" : false }";
+							 + registration.rpId + "\", \"crossOrigin\" : false }";
 	auto clientDataBytes = std::vector<unsigned char>(clientData.begin(), clientData.end());
 	res = fido_cred_set_clientdata(cred.get(), clientDataBytes.data(), clientDataBytes.size());
 	if (res != FIDO_OK)
@@ -1036,12 +1039,10 @@ std::optional<FIDORegistrationResponse> FIDODevice::Register(
 
 	// User ID
 	auto userId = Convert::Base64URLDecode(registration.userId);
-	if ((res = fido_cred_set_user(cred.get(),
-		userId.data(),
-		userId.size(),
-		registration.userName.c_str(),
-		registration.userDisplayName.c_str(),
-		NULL)) != FIDO_OK)
+	if ((res = fido_cred_set_user(
+			 cred.get(), userId.data(), userId.size(), registration.userName.c_str(),
+			 registration.userDisplayName.c_str(), NULL))
+		!= FIDO_OK)
 	{
 		EDUMFAError("fido_cred_set_user: " + std::string(fido_strerr(res)) + " code: " + std::to_string(res));
 		throw FIDOException(res, "Failed to set user information.");

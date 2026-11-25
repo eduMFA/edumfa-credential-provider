@@ -24,11 +24,10 @@
 namespace Shared
 {
 #define PROVIDER 0
-#define FILTER 1
-	bool IsRequiredForScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus, int caller);
+#define FILTER   1
+bool IsRequiredForScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus, int caller);
 
-	bool IsCurrentSessionRemote();
+bool IsCurrentSessionRemote();
 
-	std::string CPUStoString(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus);
-};
-
+std::string CPUStoString(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus);
+}; // namespace Shared

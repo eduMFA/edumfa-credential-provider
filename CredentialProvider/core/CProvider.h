@@ -30,7 +30,7 @@
 #include <credentialprovider.h>
 
 constexpr auto MAX_CREDENTIALS = 3;
-constexpr auto MAX_DWORD = 0xffffffff;        // maximum DWORD;
+constexpr auto MAX_DWORD = 0xffffffff; // maximum DWORD;
 
 enum class SERIALIZATION_AVAILABLE
 {
@@ -44,10 +44,7 @@ class CProvider : public ICredentialProvider
 {
 public:
 	// IUnknown
-	IFACEMETHODIMP_(ULONG) AddRef() noexcept override
-	{
-		return ++_cRef;
-	}
+	IFACEMETHODIMP_(ULONG) AddRef() noexcept override { return ++_cRef; }
 
 	IFACEMETHODIMP_(ULONG) Release() noexcept override
 	{
@@ -59,11 +56,10 @@ public:
 		return cRef;
 	}
 
-	#pragma warning( disable : 4838 )
+#pragma warning(disable : 4838)
 	IFACEMETHODIMP QueryInterface(__in REFIID riid, __deref_out void** ppv) noexcept override
 	{
-		static const QITAB qit[] =
-		{
+		static const QITAB qit[] = {
 			QITABENT(CProvider, ICredentialProvider), // IID_ICredentialProvider
 			{ 0 },
 		};
@@ -78,9 +74,12 @@ public:
 	IFACEMETHODIMP UnAdvise() override;
 
 	IFACEMETHODIMP GetFieldDescriptorCount(__out DWORD* pdwCount) override;
-	IFACEMETHODIMP GetFieldDescriptorAt(__in DWORD dwIndex, __deref_out CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR** ppcpfd) override;
+	IFACEMETHODIMP GetFieldDescriptorAt(__in DWORD dwIndex, __deref_out CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR** ppcpfd)
+		override;
 
-	IFACEMETHODIMP GetCredentialCount(__out DWORD* pdwCount, __out_range(<, *pdwCount) DWORD* pdwDefault,
+	IFACEMETHODIMP GetCredentialCount(
+		__out DWORD* pdwCount,
+		__out_range(<, *pdwCount) DWORD* pdwDefault,
 		__out BOOL* pbAutoLogonWithDefault) override;
 
 	IFACEMETHODIMP GetCredentialAt(__in DWORD dwIndex, __deref_out ICredentialProviderCredential** ppcpc) override;
@@ -94,18 +93,18 @@ protected:
 private:
 	void _CleanupSetSerialization();
 
-	void _GetSerializedCredentials(PWSTR *username, PWSTR *password, PWSTR *domain);
+	void _GetSerializedCredentials(PWSTR* username, PWSTR* password, PWSTR* domain);
 
 	bool _SerializationAvailable(SERIALIZATION_AVAILABLE checkFor);
 
 private:
-	LONG									_cRef;
+	LONG _cRef;
 
-	KERB_INTERACTIVE_UNLOCK_LOGON*          _pkiulSetSerialization;
+	KERB_INTERACTIVE_UNLOCK_LOGON* _pkiulSetSerialization;
 
-	std::unique_ptr<CCredential>			_credential;
+	std::unique_ptr<CCredential> _credential;
 
-	std::shared_ptr<Configuration>			_config;
+	std::shared_ptr<Configuration> _config;
 };
 
 #endif

@@ -35,20 +35,15 @@
 #include <map>
 #include <optional>
 
-#define NOT_EMPTY(NAME) \
-	(NAME != NULL && NAME[0] != NULL)
+#define NOT_EMPTY(NAME) (NAME != NULL && NAME[0] != NULL)
 
-#define ZERO(NAME) \
-	SecureZeroMemory(NAME, sizeof(NAME))
+#define ZERO(NAME) SecureZeroMemory(NAME, sizeof(NAME))
 
 class CCredential : public IConnectableCredentialProviderCredential
 {
 public:
 	// IUnknown
-	IFACEMETHODIMP_(ULONG) AddRef() noexcept override
-	{
-		return ++_cRef;
-	}
+	IFACEMETHODIMP_(ULONG) AddRef() noexcept override { return ++_cRef; }
 
 	IFACEMETHODIMP_(ULONG) Release() noexcept override
 	{
@@ -60,18 +55,18 @@ public:
 		return cRef;
 	}
 
-#pragma warning( disable : 4838 )
+#pragma warning(disable : 4838)
 	IFACEMETHODIMP QueryInterface(__in REFIID riid, __deref_out void** ppv) noexcept override
 	{
-		static const QITAB qit[] =
-		{
-			QITABENT(CCredential, ICredentialProviderCredential), // IID_ICredentialProviderCredential
-			QITABENT(CCredential, IConnectableCredentialProviderCredential), // IID_IConnectableCredentialProviderCredential
+		static const QITAB qit[] = {
+			QITABENT(CCredential, ICredentialProviderCredential),
+			QITABENT(CCredential, IConnectableCredentialProviderCredential),
 			{ 0 },
 		};
 
 		return QISearch(this, qit, riid, ppv);
 	}
+
 public:
 	// ICredentialProviderCredential
 	IFACEMETHODIMP Advise(__in ICredentialProviderCredentialEvents* pcpce) override;
@@ -80,14 +75,19 @@ public:
 	IFACEMETHODIMP SetSelected(__out BOOL* pbAutoLogon) override;
 	IFACEMETHODIMP SetDeselected() override;
 
-	IFACEMETHODIMP GetFieldState(__in DWORD dwFieldID,
+	IFACEMETHODIMP GetFieldState(
+		__in DWORD dwFieldID,
 		__out CREDENTIAL_PROVIDER_FIELD_STATE* pcpfs,
 		__out CREDENTIAL_PROVIDER_FIELD_INTERACTIVE_STATE* pcpfis) override;
 
 	IFACEMETHODIMP GetStringValue(__in DWORD dwFieldID, __deref_out PWSTR* ppwsz) override;
 	IFACEMETHODIMP GetBitmapValue(__in DWORD dwFieldID, __out HBITMAP* phbmp) override;
-	IFACEMETHODIMP GetCheckboxValue(__in DWORD dwFieldID, __out BOOL* pbChecked, __deref_out PWSTR* ppwszLabel) override;
-	IFACEMETHODIMP GetComboBoxValueCount(__in DWORD dwFieldID, __out DWORD* pcItems, __out_range(< , *pcItems) DWORD* pdwSelectedItem) override;
+	IFACEMETHODIMP GetCheckboxValue(__in DWORD dwFieldID, __out BOOL* pbChecked, __deref_out PWSTR* ppwszLabel)
+		override;
+	IFACEMETHODIMP GetComboBoxValueCount(
+		__in DWORD dwFieldID,
+		__out DWORD* pcItems,
+		__out_range(<, *pcItems) DWORD* pdwSelectedItem) override;
 	IFACEMETHODIMP GetComboBoxValueAt(__in DWORD dwFieldID, __in DWORD dwItem, __deref_out PWSTR* ppwszItem) override;
 	IFACEMETHODIMP GetSubmitButtonValue(__in DWORD dwFieldID, __out DWORD* pdwAdjacentTo) override;
 
@@ -96,12 +96,14 @@ public:
 	IFACEMETHODIMP SetComboBoxSelectedValue(__in DWORD dwFieldID, __in DWORD dwSelectedItem) override;
 	IFACEMETHODIMP CommandLinkClicked(__in DWORD dwFieldID) override;
 
-	IFACEMETHODIMP GetSerialization(__out CREDENTIAL_PROVIDER_GET_SERIALIZATION_RESPONSE* pcpgsr,
+	IFACEMETHODIMP GetSerialization(
+		__out CREDENTIAL_PROVIDER_GET_SERIALIZATION_RESPONSE* pcpgsr,
 		__out CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION* pcpcs,
 		__deref_out_opt PWSTR* ppwszOptionalStatusText,
 		__out CREDENTIAL_PROVIDER_STATUS_ICON* pcpsiOptionalStatusIcon) override;
 
-	IFACEMETHODIMP ReportResult(__in NTSTATUS ntsStatus,
+	IFACEMETHODIMP ReportResult(
+		__in NTSTATUS ntsStatus,
 		__in NTSTATUS ntsSubstatus,
 		__deref_out_opt PWSTR* ppwszOptionalStatusText,
 		__out CREDENTIAL_PROVIDER_STATUS_ICON* pcpsiOptionalStatusIcon) override;
@@ -178,7 +180,7 @@ private:
 	wchar_t* _rgFieldStrings[FID_NUM_FIELDS];
 	ICredentialProviderCredentialEvents* _pCredProvCredentialEvents = nullptr;
 	DWORD _dwComboIndex;
-	EduMFA	_eduMFA;
+	EduMFA _eduMFA;
 	std::shared_ptr<Configuration> _config;
 	Utilities _util;
 	std::wstring _initialDomain;

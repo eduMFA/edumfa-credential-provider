@@ -25,8 +25,8 @@
 #include <map>
 #include <Windows.h>
 
-#define EDUMFA_ERROR_SERVER_UNAVAILABLE					((HRESULT)0x88809014)
-#define EDUMFA_ERROR_ENDPOINT_SETUP						((HRESULT)0x88809015)
+#define EDUMFA_ERROR_SERVER_UNAVAILABLE ((HRESULT)0x88809014)
+#define EDUMFA_ERROR_ENDPOINT_SETUP     ((HRESULT)0x88809015)
 
 enum class RequestMethod
 {
@@ -37,7 +37,11 @@ enum class RequestMethod
 class Endpoint
 {
 public:
-	Endpoint(EduMFAConfig config) : _config(config), hostname(config.hostname), path(config.path), port(config.port) {};
+	Endpoint(EduMFAConfig config) :
+		_config(config),
+		hostname(config.hostname),
+		path(config.path),
+		port(config.port) {};
 
 	std::string SendRequest(
 		const std::string& endpoint,
@@ -52,7 +56,6 @@ public:
 	int port = 0;
 
 private:
-
 	std::string EncodeRequestParameters(const std::map<std::string, std::string>& parameters);
 
 	std::wstring EncodeUTF16(const std::string& str, int codepage);

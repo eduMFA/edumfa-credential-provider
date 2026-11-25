@@ -9,7 +9,6 @@ struct AllowCredential
 	std::string type = "public-key";
 };
 
-
 struct FIDOSignRequest
 {
 	std::vector<AllowCredential> allowCredentials;
@@ -33,19 +32,23 @@ struct FIDOSignRequest
 		const std::string& type,
 		const std::vector<AllowCredential>& allowCredentials = std::vector<AllowCredential>(),
 		const std::vector<std::string>& transports = std::vector<std::string>(),
-		int timeout = 0)
-		: challenge(challenge), rpId(rpId), userVerification(userVerification), transactionId(transactionId), message(message),
-		type(type), allowCredentials(allowCredentials), transports(transports), timeout(timeout)
-	{}
+		int timeout = 0) :
+		challenge(challenge),
+		rpId(rpId),
+		userVerification(userVerification),
+		transactionId(transactionId),
+		message(message),
+		type(type),
+		allowCredentials(allowCredentials),
+		transports(transports),
+		timeout(timeout)
+	{
+	}
 
 	std::string ToString()
 	{
 		// convert all non vectors to string and concatenate
-		return "FIDO2SignRequest: challenge: " + challenge +
-			", rpId: " + rpId +
-			", userVerification: " + userVerification +
-			", transactionId: " + transactionId +
-			", message: " + message +
-			", type: " + type ;
+		return "FIDO2SignRequest: challenge: " + challenge + ", rpId: " + rpId + ", userVerification: "
+			   + userVerification + ", transactionId: " + transactionId + ", message: " + message + ", type: " + type;
 	}
 };

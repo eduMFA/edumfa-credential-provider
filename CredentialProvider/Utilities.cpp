@@ -35,8 +35,10 @@ HRESULT Utilities::KerberosLogon(
 	}
 
 	EDUMFADebug(L"Username: " + username);
-	EDUMFADebug(L"Password: " + (password.empty() ? L"empty password" :
-		(_config->piconfig.logPasswords ? password : L"hidden but has value")));
+	EDUMFADebug(
+		L"Password: "
+		+ (password.empty() ? L"empty password"
+							: (_config->piconfig.logPasswords ? password : L"hidden but has value")));
 	EDUMFADebug(L"Domain: " + domain);
 
 	if (!domain.empty())
@@ -52,7 +54,8 @@ HRESULT Utilities::KerberosLogon(
 			SecureWString secureUsername(username);
 
 			// Initialize kiul with weak references to our credential.
-			hr = KerbInteractiveUnlockLogonInit(secureDomain.get(), secureUsername.get(), pwzProtectedPassword, cpus, &kiul);
+			hr = KerbInteractiveUnlockLogonInit(
+				secureDomain.get(), secureUsername.get(), pwzProtectedPassword, cpus, &kiul);
 
 			if (SUCCEEDED(hr))
 			{
@@ -100,7 +103,7 @@ HRESULT Utilities::KerberosChangePassword(
 
 	WCHAR wsz[64];
 	DWORD cch = ARRAYSIZE(wsz);
-	BOOL  bGetCompName = true;
+	BOOL bGetCompName = true;
 
 	if (!domain.empty())
 	{
@@ -113,10 +116,14 @@ HRESULT Utilities::KerberosChangePassword(
 
 	EDUMFADebug(L"User: " + username);
 	EDUMFADebug(L"Domain: " + wstring(wsz));
-	EDUMFADebug(L"Pw old: " + (_config->piconfig.logPasswords ? passwordOld :
-		(passwordOld.empty() ? L"no value" : L"hidden but has value")));
-	EDUMFADebug(L"Pw new: " + (_config->piconfig.logPasswords ? passwordNew :
-		(passwordNew.empty() ? L"no value" : L"hidden but has value")));
+	EDUMFADebug(
+		L"Pw old: "
+		+ (_config->piconfig.logPasswords ? passwordOld
+										  : (passwordOld.empty() ? L"no value" : L"hidden but has value")));
+	EDUMFADebug(
+		L"Pw new: "
+		+ (_config->piconfig.logPasswords ? passwordNew
+										  : (passwordNew.empty() ? L"no value" : L"hidden but has value")));
 
 	if (!domain.empty() || bGetCompName)
 	{
@@ -175,7 +182,7 @@ HRESULT Utilities::CredPackAuthentication(
 
 	WCHAR wsz[MAX_SIZE_DOMAIN];
 	DWORD cch = ARRAYSIZE(wsz);
-	BOOL  bGetCompName = false;
+	BOOL bGetCompName = false;
 
 	if (domain.empty())
 	{
@@ -209,16 +216,18 @@ HRESULT Utilities::CredPackAuthentication(
 
 			SecureWString securePassword(password);
 
-			if (!CredPackAuthenticationBufferW((CREDUIWIN_PACK_32_WOW & credPackFlags) ? CRED_PACK_WOW_BUFFER : 0,
-				domainUsername, securePassword.get(), rawbits, &size))
+			if (!CredPackAuthenticationBufferW(
+					(CREDUIWIN_PACK_32_WOW & credPackFlags) ? CRED_PACK_WOW_BUFFER : 0, domainUsername,
+					securePassword.get(), rawbits, &size))
 			{
 				// We received the necessary size, let's allocate some rawbits
 				if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
 				{
 					rawbits = (BYTE*)HeapAlloc(GetProcessHeap(), 0, size);
 
-					if (!CredPackAuthenticationBufferW((CREDUIWIN_PACK_32_WOW & credPackFlags) ? CRED_PACK_WOW_BUFFER : 0,
-						domainUsername, securePassword.get(), rawbits, &size))
+					if (!CredPackAuthenticationBufferW(
+							(CREDUIWIN_PACK_32_WOW & credPackFlags) ? CRED_PACK_WOW_BUFFER : 0, domainUsername,
+							securePassword.get(), rawbits, &size))
 					{
 						HeapFree(GetProcessHeap(), 0, rawbits);
 						HeapFree(GetProcessHeap(), 0, domainUsername);
@@ -260,7 +269,7 @@ HRESULT Utilities::CredPackAuthentication(
 
 HRESULT Utilities::Clear(
 	wchar_t* (&field_strings)[FID_NUM_FIELDS],
-	CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR(&pcpfd)[FID_NUM_FIELDS],
+	CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR (&pcpfd)[FID_NUM_FIELDS],
 	ICredentialProviderCredential* pcpc,
 	ICredentialProviderCredentialEvents* pcpce,
 	char clear)
@@ -273,7 +282,8 @@ HRESULT Utilities::Clear(
 	{
 		char do_something = 0;
 
-		if ((pcpfd[i].cpft == CPFT_PASSWORD_TEXT && clear >= CLEAR_FIELDS_CRYPT) || (pcpfd[i].cpft == CPFT_EDIT_TEXT && clear >= CLEAR_FIELDS_EDIT_AND_CRYPT))
+		if ((pcpfd[i].cpft == CPFT_PASSWORD_TEXT && clear >= CLEAR_FIELDS_CRYPT)
+			|| (pcpfd[i].cpft == CPFT_EDIT_TEXT && clear >= CLEAR_FIELDS_EDIT_AND_CRYPT))
 		{
 			if (field_strings[i])
 			{
@@ -331,9 +341,7 @@ HRESULT Utilities::SetFieldStatePairBatch(
 	return hr;
 }
 
-HRESULT Utilities::InitializeField(
-	LPWSTR rgFieldStrings[FID_NUM_FIELDS],
-	DWORD fieldIndex)
+HRESULT Utilities::InitializeField(LPWSTR rgFieldStrings[FID_NUM_FIELDS], DWORD fieldIndex)
 {
 	HRESULT hr = E_INVALIDARG;
 	const int hide_fullname = _config->hideFullName;
@@ -349,13 +357,11 @@ HRESULT Utilities::InitializeField(
 	case FID_NEW_PASS_1:
 	case FID_NEW_PASS_2:
 	case FID_OTP:
-	case FID_SUBMIT_BUTTON:
-	{
+	case FID_SUBMIT_BUTTON: {
 		hr = SHStrDupW(L"", &rgFieldStrings[fieldIndex]);
 		break;
 	}
-	case FID_PASSWORD:
-	{
+	case FID_PASSWORD: {
 		if (!_config->credential.password.empty())
 		{
 			hr = SHStrDupW(_config->credential.password.c_str(), &rgFieldStrings[fieldIndex]);
@@ -366,8 +372,7 @@ HRESULT Utilities::InitializeField(
 		}
 		break;
 	}
-	case FID_SUBTEXT:
-	{
+	case FID_SUBTEXT: {
 		if (_config->showDomainHint)
 		{
 			text = EDUMFATranslate(TEXT_DOMAIN_HINT) + _config->credential.domain;
@@ -375,14 +380,12 @@ HRESULT Utilities::InitializeField(
 		hr = SHStrDupW(text.c_str(), &rgFieldStrings[fieldIndex]);
 		break;
 	}
-	case FID_USERNAME:
-	{
+	case FID_USERNAME: {
 		hr = SHStrDupW((user_name.empty() ? L"" : user_name.c_str()), &rgFieldStrings[fieldIndex]);
 		//EDUMFADebug(L"Setting username: " + wstring(rgFieldStrings[field_index]));
 		break;
 	}
-	case FID_LARGE_TEXT:
-	{
+	case FID_LARGE_TEXT: {
 		// This is the USERNAME field which is displayed in the list of users to the right
 		if (!loginText.empty())
 		{
@@ -395,12 +398,11 @@ HRESULT Utilities::InitializeField(
 		//EDUMFADebug(L"Setting large text: " + wstring(rgFieldStrings[fieldIndex]));
 		break;
 	}
-	case FID_SMALL_TEXT:
-	{
+	case FID_SMALL_TEXT: {
 		// In CPUS_UNLOCK_WORKSTATION the username is already provided, therefore the field is disabled
 		// and the name is displayed in this field instead (or hidden)
-		if (_config->provider.cpu == CPUS_UNLOCK_WORKSTATION && !user_name.empty()
-			&& !hide_fullname && !hide_domainname)
+		if (_config->provider.cpu == CPUS_UNLOCK_WORKSTATION && !user_name.empty() && !hide_fullname
+			&& !hide_domainname)
 		{
 			if (!domain_name.empty())
 			{
@@ -437,18 +439,15 @@ HRESULT Utilities::InitializeField(
 		hr = S_OK;
 		break;
 	}*/
-	case FID_RESET_LINK:
-	{
+	case FID_RESET_LINK: {
 		hr = SHStrDupW(EDUMFATranslate(TEXT_RESET_LINK).c_str(), &rgFieldStrings[fieldIndex]);
 		break;
 	}
-	case FID_FIDO_ONLINE:
-	{
+	case FID_FIDO_ONLINE: {
 		hr = SHStrDupW(EDUMFATranslate(TEXT_USE_ONLINE_FIDO).c_str(), &rgFieldStrings[fieldIndex]);
 		break;
 	}
-	default:
-	{
+	default: {
 		hr = SHStrDupW(L"", &rgFieldStrings[fieldIndex]);
 		break;
 	}
@@ -463,8 +462,7 @@ HRESULT Utilities::CopyInputFields()
 	{
 	case CPUS_LOGON:
 	case CPUS_UNLOCK_WORKSTATION:
-	case CPUS_CREDUI:
-	{
+	case CPUS_CREDUI: {
 		if (!_config->credential.passwordMustChange)
 		{
 			CopyUsernameField();

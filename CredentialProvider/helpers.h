@@ -37,20 +37,15 @@
 //makes a copy of a field descriptor using CoTaskMemAlloc
 HRESULT FieldDescriptorCoAllocCopy(
 	__in const CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR& rcpfd,
-	__deref_out CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR** ppcpfd
-);
+	__deref_out CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR** ppcpfd);
 
 //makes a copy of a field descriptor on the normal heap
 HRESULT FieldDescriptorCopy(
 	__in const CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR& rcpfd,
-	__deref_out CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR* pcpfd
-);
+	__deref_out CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR* pcpfd);
 
 //creates a UNICODE_STRING from a NULL-terminated string
-HRESULT UnicodeStringInitWithString(
-	__in PWSTR pwz,
-	__out UNICODE_STRING* pus
-);
+HRESULT UnicodeStringInitWithString(__in PWSTR pwz, __out UNICODE_STRING* pus);
 
 //initializes a KERB_INTERACTIVE_UNLOCK_LOGON with weak references to the provided credentials
 HRESULT KerbInteractiveUnlockLogonInit(
@@ -58,59 +53,42 @@ HRESULT KerbInteractiveUnlockLogonInit(
 	__in PWSTR pwzUsername,
 	__in PWSTR pwzPassword,
 	__in CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus,
-	__out KERB_INTERACTIVE_UNLOCK_LOGON* pkiul
-);
+	__out KERB_INTERACTIVE_UNLOCK_LOGON* pkiul);
 
 //packages the credentials into the buffer that the system expects
 HRESULT KerbInteractiveUnlockLogonPack(
 	__in const KERB_INTERACTIVE_UNLOCK_LOGON& rkiulIn,
 	__deref_out_bcount(*pcb) BYTE** prgb,
-	__out DWORD* pcb
-);
+	__out DWORD* pcb);
 
 //packages the credentials into the buffer that the system expects
 HRESULT KerbChangePasswordPack(
 	__in const KERB_CHANGEPASSWORD_REQUEST& rkcrIn,
 	__deref_out_bcount(*pcb) BYTE** prgb,
-	__out DWORD* pcb
-);
+	__out DWORD* pcb);
 
 //get the authentication package that will be used for our logon attempt
-HRESULT RetrieveNegotiateAuthPackage(
-	__out ULONG* pulAuthPackage
-);
+HRESULT RetrieveNegotiateAuthPackage(__out ULONG* pulAuthPackage);
 
 //encrypt a password (if necessary) and copy it; if not, just copy it
 HRESULT ProtectIfNecessaryAndCopyPassword(
 	__in PCWSTR pwzPassword,
 	__in CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus,
-	__deref_out PWSTR* ppwzProtectedPassword
-);
+	__deref_out PWSTR* ppwzProtectedPassword);
 
-HRESULT UnProtectIfNecessaryAndCopyPassword(
-	__in PCWSTR pwzPassword,
-	__deref_out PWSTR* ppwzUnProtectedPassword
-);
+HRESULT UnProtectIfNecessaryAndCopyPassword(__in PCWSTR pwzPassword, __deref_out PWSTR* ppwzUnProtectedPassword);
 
-HRESULT _UnProtectAndCopyString(
-	__in PCWSTR pwzToUnProtect,
-	__deref_out PWSTR* ppwzUnProtected
-);
+HRESULT _UnProtectAndCopyString(__in PCWSTR pwzToUnProtect, __deref_out PWSTR* ppwzUnProtected);
 
 HRESULT KerbInteractiveUnlockLogonRepackNative(
 	__in_bcount(cbWow) BYTE* rgbWow,
 	__in DWORD cbWow,
 	__deref_out_bcount(*pcbNative) BYTE** prgbNative,
-	__out DWORD* pcbNative
-);
+	__out DWORD* pcbNative);
 
-void KerbInteractiveUnlockLogonUnpackInPlace(
-	__inout_bcount(cb) KERB_INTERACTIVE_UNLOCK_LOGON* pkiul,
-	__in DWORD cb
-);
+void KerbInteractiveUnlockLogonUnpackInPlace(__inout_bcount(cb) KERB_INTERACTIVE_UNLOCK_LOGON* pkiul, __in DWORD cb);
 
 HRESULT DomainUsernameStringAlloc(
 	__in PCWSTR pwszDomain,
 	__in PCWSTR pwszUsername,
-	__deref_out PWSTR* ppwszDomainUsername
-);
+	__deref_out PWSTR* ppwszDomainUsername);

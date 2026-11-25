@@ -197,12 +197,9 @@ HRESULT JsonParser::ParseResponse(std::string serverResponse, EduMFAResponse& re
 	if (!passkey.empty())
 	{
 		response.passkeyChallenge = FIDOSignRequest(
-			GetStringOrEmpty(passkey, "challenge"),
-			GetStringOrEmpty(passkey, "rpId"),
-			GetStringOrEmpty(passkey, "user_verification"),
-			GetStringOrEmpty(passkey, "transaction_id"),
-			GetStringOrEmpty(passkey, "message"),
-			"passkey");
+			GetStringOrEmpty(passkey, "challenge"), GetStringOrEmpty(passkey, "rpId"),
+			GetStringOrEmpty(passkey, "user_verification"), GetStringOrEmpty(passkey, "transaction_id"),
+			GetStringOrEmpty(passkey, "message"), "passkey");
 	}
 
 	response.message = GetStringOrEmpty(jDetail, "message");
@@ -263,7 +260,8 @@ HRESULT JsonParser::ParseResponse(std::string serverResponse, EduMFAResponse& re
 				}
 				else
 				{
-					EDUMFADebug("authenticatorSelection in passkey_registration was expected to be object, but was not.");
+					EDUMFADebug(
+						"authenticatorSelection in passkey_registration was expected to be object, but was not.");
 				}
 				// PubKeyCredParams
 				auto& pubKeyCredParams = pkreg["pubKeyCredParams"];
@@ -434,7 +432,8 @@ HRESULT ParseOfflineDataItem(json jRoot, OfflineData& data)
 		return EDUMFA_JSON_PARSE_ERROR;
 	}
 
-	const bool isWebAuthn = response.contains("credentialId") && response.contains("rpId") && response.contains("pubKey");
+	const bool isWebAuthn =
+		response.contains("credentialId") && response.contains("rpId") && response.contains("pubKey");
 	if (isWebAuthn)
 	{
 		data.pubKey = GetStringOrEmpty(response, "pubKey");
@@ -468,7 +467,6 @@ HRESULT ParseOfflineDataItem(json jRoot, OfflineData& data)
 		catch (const json::type_error& e)
 		{
 			EDUMFADebug(e.what());
-
 		}
 	}
 

@@ -55,8 +55,12 @@ HRESULT CSample_CreateInstance(__in REFIID riid, __deref_out void** ppv)
 	return hr;
 }
 
-HRESULT CCredentialProviderFilter::Filter(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus, DWORD dwFlags, GUID* rgclsidProviders,
-	BOOL* rgbAllow, DWORD cProviders)
+HRESULT CCredentialProviderFilter::Filter(
+	CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus,
+	DWORD dwFlags,
+	GUID* rgclsidProviders,
+	BOOL* rgbAllow,
+	DWORD cProviders)
 {
 	UNREFERENCED_PARAMETER(dwFlags);
 	EDUMFADebug(std::string(__FUNCTION__) + " " + Shared::CPUStoString(cpus));
@@ -72,14 +76,14 @@ HRESULT CCredentialProviderFilter::Filter(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpu
 
 	switch (cpus)
 	{
-		case CPUS_LOGON:
-		case CPUS_UNLOCK_WORKSTATION:
-		case CPUS_CREDUI:
-			break;
-		case CPUS_CHANGE_PASSWORD:
-			return E_NOTIMPL;
-		default:
-			return E_INVALIDARG;
+	case CPUS_LOGON:
+	case CPUS_UNLOCK_WORKSTATION:
+	case CPUS_CREDUI:
+		break;
+	case CPUS_CHANGE_PASSWORD:
+		return E_NOTIMPL;
+	default:
+		return E_INVALIDARG;
 	}
 
 	if (!Shared::IsRequiredForScenario(cpus, FILTER))
@@ -153,7 +157,9 @@ CCredentialProviderFilter::~CCredentialProviderFilter()
 	DllRelease();
 }
 
-HRESULT CCredentialProviderFilter::UpdateRemoteCredential(const CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION* pcpcsIn, CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION* pcpcsOut)
+HRESULT CCredentialProviderFilter::UpdateRemoteCredential(
+	const CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION* pcpcsIn,
+	CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION* pcpcsOut)
 {
 	//UNREFERENCED_PARAMETER(pcpsIn);
 	//UNREFERENCED_PARAMETER(pcpcsOut);
@@ -174,7 +180,8 @@ HRESULT CCredentialProviderFilter::UpdateRemoteCredential(const CREDENTIAL_PROVI
 	pcpcsOut->clsidCredentialProvider = CLSID_COTP_LOGON;
 
 	// copy the buffer contents if needed
-	if (pcpcsOut->cbSerialization > 0 && (pcpcsOut->rgbSerialization = (BYTE*)CoTaskMemAlloc(pcpcsIn->cbSerialization)) != NULL)
+	if (pcpcsOut->cbSerialization > 0
+		&& (pcpcsOut->rgbSerialization = (BYTE*)CoTaskMemAlloc(pcpcsIn->cbSerialization)) != NULL)
 	{
 		CopyMemory(pcpcsOut->rgbSerialization, pcpcsIn->rgbSerialization, pcpcsIn->cbSerialization);
 		return S_OK;

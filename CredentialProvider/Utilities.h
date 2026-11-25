@@ -43,8 +43,7 @@ public:
 		__in CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus,
 		__in std::wstring username,
 		__in std::wstring password,
-		__in std::wstring domain
-	);
+		__in std::wstring domain);
 
 	HRESULT KerberosChangePassword(
 		__out CREDENTIAL_PROVIDER_GET_SERIALIZATION_RESPONSE* pcpgsr,
@@ -52,8 +51,7 @@ public:
 		__in std::wstring username,
 		__in std::wstring passwordOld,
 		__in std::wstring passwordNew,
-		__in std::wstring domain
-	);
+		__in std::wstring domain);
 
 	HRESULT CredPackAuthentication(
 		__out CREDENTIAL_PROVIDER_GET_SERIALIZATION_RESPONSE*& pcpgsr,
@@ -61,27 +59,21 @@ public:
 		__in CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus,
 		__in std::wstring username,
 		__in std::wstring password,
-		__in std::wstring domain
-	);
+		__in std::wstring domain);
 
 	HRESULT Clear(
 		wchar_t* (&field_strings)[FID_NUM_FIELDS],
 		CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR (&pcpfd)[FID_NUM_FIELDS],
 		ICredentialProviderCredential* pcpc,
 		ICredentialProviderCredentialEvents* pcpce,
-		char clear
-	);
+		char clear);
 
 	HRESULT SetFieldStatePairBatch(
 		__in ICredentialProviderCredential* self,
 		__in ICredentialProviderCredentialEvents* pCPCE,
-		__in const FIELD_STATE_PAIR* pFSP
-	);
+		__in const FIELD_STATE_PAIR* pFSP);
 
-	HRESULT InitializeField(
-		LPWSTR rgFieldStrings[FID_NUM_FIELDS],
-		DWORD fieldIndex
-	);
+	HRESULT InitializeField(LPWSTR rgFieldStrings[FID_NUM_FIELDS], DWORD fieldIndex);
 
 	static std::wstring ComputerName();
 
@@ -118,4 +110,3 @@ public:
 private:
 	std::shared_ptr<Configuration> _config;
 };
-

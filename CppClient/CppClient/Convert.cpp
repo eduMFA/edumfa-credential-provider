@@ -97,10 +97,9 @@ std::wstring Convert::JoinW(const std::vector<std::wstring>& elements, const wch
 
 std::vector<unsigned char> Convert::Base64Decode(const std::string& base64String)
 {
-	static const std::string base64_chars =
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-		"abcdefghijklmnopqrstuvwxyz"
-		"0123456789+/";
+	static const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+											"abcdefghijklmnopqrstuvwxyz"
+											"0123456789+/";
 
 	std::vector<unsigned char> decoded_data;
 	size_t in_len = base64String.size();
@@ -110,8 +109,8 @@ std::vector<unsigned char> Convert::Base64Decode(const std::string& base64String
 	unsigned char char_array_4[4]{};
 	unsigned char char_array_3[3]{};
 
-	while (in_len-- && (base64String[in_] != '=') && (isalnum(base64String[in_])
-		|| (base64String[in_] == '+') || (base64String[in_] == '/')))
+	while (in_len-- && (base64String[in_] != '=')
+		   && (isalnum(base64String[in_]) || (base64String[in_] == '+') || (base64String[in_] == '/')))
 	{
 		char_array_4[i++] = base64String[in_];
 		in_++;
@@ -169,10 +168,9 @@ std::vector<unsigned char> Convert::Base64URLDecode(const std::string& base64Str
 
 std::string Convert::Base64Encode(const unsigned char* data, const size_t size, bool padded)
 {
-	static const std::string base64_chars =
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-		"abcdefghijklmnopqrstuvwxyz"
-		"0123456789+/";
+	static const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+											"abcdefghijklmnopqrstuvwxyz"
+											"0123456789+/";
 
 	size_t count = size;
 	std::string encoded_string;
@@ -257,9 +255,7 @@ char* Convert::UnicodeToCodePage(int codePage, const wchar_t* src)
 		return x;
 	}
 
-	int requiredSize = WideCharToMultiByte(codePage,
-		0,
-		src, srcLen, 0, 0, 0, 0);
+	int requiredSize = WideCharToMultiByte(codePage, 0, src, srcLen, 0, 0, 0, 0);
 
 	if (!requiredSize)
 	{
@@ -269,9 +265,7 @@ char* Convert::UnicodeToCodePage(int codePage, const wchar_t* src)
 	char* x = new char[(LONGLONG)requiredSize + 1];
 	x[requiredSize] = 0;
 
-	int retval = WideCharToMultiByte(codePage,
-		0,
-		src, srcLen, x, requiredSize, 0, 0);
+	int retval = WideCharToMultiByte(codePage, 0, src, srcLen, x, requiredSize, 0, 0);
 	if (!retval)
 	{
 		delete[] x;

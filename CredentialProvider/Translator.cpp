@@ -95,7 +95,8 @@ std::string Translator::GetUserLocale()
 	if (GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH) != 0)
 	{
 		char narrowLocaleName[LOCALE_NAME_MAX_LENGTH] = { 0 };
-		if (WideCharToMultiByte(CP_UTF8, 0, localeName, -1, narrowLocaleName, LOCALE_NAME_MAX_LENGTH, nullptr, nullptr) > 0)
+		if (WideCharToMultiByte(CP_UTF8, 0, localeName, -1, narrowLocaleName, LOCALE_NAME_MAX_LENGTH, nullptr, nullptr)
+			> 0)
 		{
 			return narrowLocaleName;
 		}
@@ -142,12 +143,14 @@ bool Translator::LoadTranslations(const std::string& locale)
 
 	for (auto it = data.begin(); it != data.end(); ++it)
 	{
-		try {
+		try
+		{
 			const int key = std::stoi(it.key());
 			std::string value = it.value();
 			_translations[key] = Convert::ToWString(value);
 		}
-		catch (...) {
+		catch (...)
+		{
 			EDUMFAError("Invalid key in translation file: " + it.key());
 		}
 	}

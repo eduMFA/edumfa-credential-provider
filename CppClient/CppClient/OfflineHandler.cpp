@@ -27,7 +27,7 @@
 #include <atlenc.h>
 #include <algorithm>
 
-#pragma comment (lib, "bcrypt.lib")
+#pragma comment(lib, "bcrypt.lib")
 
 using namespace std;
 
@@ -41,14 +41,8 @@ std::wstring getErrorText(DWORD err)
 {
 	LPWSTR msgBuf = nullptr;
 	FormatMessage(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER |
-		FORMAT_MESSAGE_FROM_SYSTEM |
-		FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL,
-		err,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPTSTR)&msgBuf,
-		0, NULL);
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, err,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuf, 0, NULL);
 	return (msgBuf == nullptr) ? wstring() : wstring(msgBuf);
 }
 
@@ -136,7 +130,9 @@ HRESULT OfflineHandler::VerifyOfflineOTP(const std::wstring& otp, const std::str
 						count++;
 					}
 				}
-				EDUMFADebug("Offline authentication success with token " + item.serial + ", removing " + to_string(count) + " offline OTPs.");
+				EDUMFADebug(
+					"Offline authentication success with token " + item.serial + ", removing " + to_string(count)
+					+ " offline OTPs.");
 				serialUsed = item.serial;
 				// Persist the consumed OTPs immediately - otherwise only the destructor's
 				// SaveToFile() does, so a process that never reaches a clean shutdown (or a
@@ -148,7 +144,9 @@ HRESULT OfflineHandler::VerifyOfflineOTP(const std::wstring& otp, const std::str
 			}
 			else if (success == E_FAIL)
 			{
-				EDUMFADebug("Offline authentication failed with token " + item.serial + ". The given OTP was not in the range of tested values!");
+				EDUMFADebug(
+					"Offline authentication failed with token " + item.serial
+					+ ". The given OTP was not in the range of tested values!");
 			}
 		}
 	}
@@ -186,7 +184,8 @@ HRESULT OfflineHandler::AddOfflineData(const OfflineData& data)
 	bool done = false;
 	for (auto& existing : _dataSets)
 	{
-		if (Convert::ToUpperCase(existing.username) == Convert::ToUpperCase(data.username) && existing.serial == data.serial)
+		if (Convert::ToUpperCase(existing.username) == Convert::ToUpperCase(data.username)
+			&& existing.serial == data.serial)
 		{
 			EDUMFADebug("Offline: Updating exsisting user data for " + data.username + " and token " + data.serial);
 			existing.refilltoken = data.refilltoken;
@@ -291,7 +290,8 @@ void OfflineHandler::Prune(int days)
 	size_t initialSize = _dataSets.size();
 
 	_dataSets.erase(
-		std::remove_if(_dataSets.begin(), _dataSets.end(),
+		std::remove_if(
+			_dataSets.begin(), _dataSets.end(),
 			[days, now](const OfflineData& item) {
 				// --- FIX: Ignore legacy items (== 0) AND corrupted negative timestamps (< 0) ---
 				if (item.expiration <= 0) return false;
@@ -306,13 +306,14 @@ void OfflineHandler::Prune(int days)
 				// Ensure the expiration is actually in the past
 				if (secondsPastExpiration > 0 && secondsPastExpiration > secondsAllowed)
 				{
-					EDUMFADebug("Removing stale credential " + item.serial + " (Expired " + to_string((int)(secondsPastExpiration / 86400.0)) + " days ago)");
+					EDUMFADebug(
+						"Removing stale credential " + item.serial + " (Expired "
+						+ to_string((int)(secondsPastExpiration / 86400.0)) + " days ago)");
 					return true;
 				}
 				return false;
 			}),
-		_dataSets.end()
-	);
+		_dataSets.end());
 
 	// Only save if we actually deleted something
 	if (_dataSets.size() < initialSize)
@@ -486,17 +487,8 @@ bool OfflineHandler::PBKDF2SHA512Verify(std::wstring password, std::string store
 	const ULONG dwFlags = 0; // RESERVED, MUST BE ZERO
 	BCRYPT_ALG_HANDLE hPrf = BCRYPT_HMAC_SHA512_ALG_HANDLE;
 
-	const NTSTATUS status =
-		BCryptDeriveKeyPBKDF2(
-			hPrf,
-			pbPassword,
-			cbPassword,
-			pbSalt,
-			cbSalt,
-			ullIterations,
-			pbDerivedKey,
-			cbDerivedKey,
-			dwFlags);
+	const NTSTATUS status = BCryptDeriveKeyPBKDF2(
+		hPrf, pbPassword, cbPassword, pbSalt, cbSalt, ullIterations, pbDerivedKey, cbDerivedKey, dwFlags);
 
 	CoTaskMemFree(pbSalt);
 

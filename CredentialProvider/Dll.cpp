@@ -22,7 +22,7 @@
 
 #include "Dll.h"
 
-static LONG g_cRef = 0;   // global dll reference count
+static LONG g_cRef = 0;      // global dll reference count
 HINSTANCE g_hinst = nullptr; // global dll hinstance
 
 extern HRESULT CSample_CreateInstance(__in REFIID riid, __deref_out void** ppv);
@@ -31,31 +31,28 @@ EXTERN_C GUID CLSID_CSample;
 class CClassFactory : public IClassFactory
 {
 public:
-	CClassFactory() : _cRef(1)
-	{}
+	CClassFactory() :
+		_cRef(1)
+	{
+	}
 
 	// IUnknown
-#pragma warning( disable : 4838 )
+#pragma warning(disable : 4838)
 	IFACEMETHODIMP QueryInterface(__in REFIID riid, __deref_out void** ppv) noexcept
 	{
-		static const QITAB qit[] =
-		{
+		static const QITAB qit[] = {
 			QITABENT(CClassFactory, IClassFactory),
 			{ 0 },
 		};
 		return QISearch(this, qit, riid, ppv);
 	}
 
-	IFACEMETHODIMP_(ULONG) AddRef() noexcept
-	{
-		return InterlockedIncrement(&_cRef);
-	}
+	IFACEMETHODIMP_(ULONG) AddRef() noexcept { return InterlockedIncrement(&_cRef); }
 
 	IFACEMETHODIMP_(ULONG) Release() noexcept
 	{
 		LONG const cRef = InterlockedDecrement(&_cRef);
-		if (!cRef)
-			delete this;
+		if (!cRef) delete this;
 		return cRef;
 	}
 
@@ -89,8 +86,7 @@ public:
 	}
 
 private:
-	~CClassFactory()
-	{}
+	~CClassFactory() {}
 	long _cRef;
 };
 
@@ -144,17 +140,16 @@ STDAPI_(BOOL) DllMain(__in HINSTANCE hinstDll, __in DWORD dwReason, __in void*)
 {
 	switch (dwReason)
 	{
-		case DLL_PROCESS_ATTACH:
-			DisableThreadLibraryCalls(hinstDll);
-			break;
-		case DLL_PROCESS_DETACH:
-		case DLL_THREAD_ATTACH:
-		case DLL_THREAD_DETACH:
-		default:
-			break;
+	case DLL_PROCESS_ATTACH:
+		DisableThreadLibraryCalls(hinstDll);
+		break;
+	case DLL_PROCESS_DETACH:
+	case DLL_THREAD_ATTACH:
+	case DLL_THREAD_DETACH:
+	default:
+		break;
 	}
 
 	g_hinst = hinstDll;
 	return TRUE;
 }
-

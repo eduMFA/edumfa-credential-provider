@@ -712,7 +712,7 @@ HRESULT KerbInteractiveUnlockLogonRepackNative(
 				}
 				else
 				{
-					hr = GetLastError();
+					hr = HRESULT_FROM_WIN32(GetLastError());
 				}
 			}
 		}

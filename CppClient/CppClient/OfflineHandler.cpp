@@ -80,10 +80,18 @@ OfflineHandler::OfflineHandler(const std::wstring& filePath, int tryWindow, int 
 
 OfflineHandler::~OfflineHandler()
 {
-	const HRESULT hr = SaveToFile();
-	if (hr != S_OK)
+	// A throwing destructor terminates the process, which is LogonUI.
+	try
 	{
-		EDUMFADebug(L"Unable to save offline file: " + to_wstring(hr) + L": " + getErrorText(hr));
+		const HRESULT hr = SaveToFile();
+		if (hr != S_OK)
+		{
+			EDUMFADebug(L"Unable to save offline file: " + to_wstring(hr) + L": " + getErrorText(hr));
+		}
+	}
+	catch (...)
+	{
+		EDUMFAError("Unable to save offline file: unexpected exception");
 	}
 }
 
@@ -376,7 +384,7 @@ HRESULT OfflineHandler::SaveToFile()
 	ofstream o;
 	o.open(_filePath, ios_base::out); // Destroy contents | create new
 
-	if (!o.is_open()) return GetLastError();
+	if (!o.is_open()) return HRESULT_FROM_WIN32(GetLastError());
 	JsonParser parser;
 	string s = parser.OfflineDataToString(_dataSets);
 	o << s;
@@ -390,7 +398,7 @@ HRESULT OfflineHandler::LoadFromFile()
 	string line;
 	ifstream ifs(_filePath);
 
-	if (!ifs.good()) return GetLastError();
+	if (!ifs.good()) return HRESULT_FROM_WIN32(GetLastError());
 
 	if (ifs.is_open())
 	{
@@ -440,8 +448,8 @@ bool OfflineHandler::PBKDF2SHA512Verify(std::wstring password, std::string store
 	{
 		EDUMFADebug(e.what());
 	}
-	// $algorithm
-	string algorithm = GetNextValue(storedValue);
+	// Skip $algorithm
+	GetNextValue(storedValue);
 
 	// Salt is in adapted abase64 encoding of passlib where [./+] is substituted
 	Convert::Base64ToABase64(salt);

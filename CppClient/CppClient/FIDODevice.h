@@ -30,11 +30,11 @@
 
 constexpr auto fidoFlags = FIDO_DISABLE_U2F_FALLBACK | FIDO_DEBUG;
 
-constexpr auto FIDO_DEVICE_ERR_TX = 0x88809089;
+constexpr HRESULT FIDO_DEVICE_ERR_TX = (HRESULT)0x88809089;
 
 constexpr auto OFFLINE_CHALLENGE_SIZE = 64;
 
-constexpr auto FIDO_PINS_DO_NOT_MATCH = 0x88809091;
+constexpr HRESULT FIDO_PINS_DO_NOT_MATCH = (HRESULT)0x88809091;
 
 class FIDODevice
 {
@@ -94,6 +94,6 @@ private:
 	bool _isWinHello = false;
 	bool _hasUV = false;
 	std::vector<int> _supportedAlgorithms;
-	long _remainingResidentKeys = -1;
+	int64_t _remainingResidentKeys = -1;
 	bool _newPinRequired = false;
 };

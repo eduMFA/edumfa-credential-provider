@@ -89,10 +89,18 @@ bool RegistryReader::GetAll(const std::wstring& pathToKey, std::map<std::wstring
 		&cbMaxValueData,       // longest value data
 		&cbSecurityDescriptor, // security descriptor
 		&ftLastWriteTime);     // last write time
+	if (retCode != ERROR_SUCCESS)
+	{
+		EDUMFAError(
+			"Failed to query registry key " + Convert::ToString(pathToKey)
+			+ ", error: " + Convert::LongToHexString(retCode));
+		RegCloseKey(hKey);
+		return false;
+	}
 
 	if (cValues)
 	{
-		for (i = 0, retCode = ERROR_SUCCESS; i < cValues; i++)
+		for (i = 0; i < cValues; i++)
 		{
 			cchValue = MAX_VALUE_NAME;
 			achValue[0] = '\0';

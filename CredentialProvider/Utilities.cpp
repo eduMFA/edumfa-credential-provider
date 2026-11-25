@@ -423,10 +423,6 @@ HRESULT Utilities::InitializeField(LPWSTR rgFieldStrings[FID_NUM_FIELDS], DWORD 
 		{
 			hr = SHStrDupW(user_name.c_str(), &rgFieldStrings[fieldIndex]);
 		}
-		else if (hide_fullname)
-		{
-			hr = SHStrDupW(L"", &rgFieldStrings[fieldIndex]);
-		}
 		else
 		{
 			hr = SHStrDupW(L"", &rgFieldStrings[fieldIndex]);

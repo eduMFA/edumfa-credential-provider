@@ -55,7 +55,6 @@ bool IsRequiredForScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus, int caller)
 	case CPUS_CHANGE_PASSWORD:
 	case CPUS_PLAP:
 	case CPUS_INVALID:
-		return false;
 	default:
 		return false;
 	}

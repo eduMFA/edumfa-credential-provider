@@ -118,7 +118,7 @@ std::vector<unsigned char> Convert::Base64Decode(const std::string& base64String
 		{
 			for (i = 0; i < 4; i++)
 			{
-				char_array_4[i] = base64_chars.find(char_array_4[i]);
+				char_array_4[i] = base64_chars.find(static_cast<char>(char_array_4[i]));
 			}
 
 			char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
@@ -143,7 +143,7 @@ std::vector<unsigned char> Convert::Base64Decode(const std::string& base64String
 
 		for (j = 0; j < 4; j++)
 		{
-			char_array_4[j] = base64_chars.find(char_array_4[j]);
+			char_array_4[j] = base64_chars.find(static_cast<char>(char_array_4[j]));
 		}
 
 		char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);

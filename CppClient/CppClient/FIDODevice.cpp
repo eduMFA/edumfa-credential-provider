@@ -141,7 +141,7 @@ static int EcKeyFromCBOR(const std::string& cborPubKey, EC_KEY** ecKey, int* alg
 		{
 			if (cbor_isa_negint(pairs[i].value))
 			{
-				alg = -1 - cbor_get_int(pairs[i].value);
+				alg = -1 - static_cast<int>(cbor_get_int(pairs[i].value));
 			}
 		}
 	}
@@ -155,7 +155,7 @@ static int EcKeyFromCBOR(const std::string& cborPubKey, EC_KEY** ecKey, int* alg
 		{
 			if (cbor_isa_negint(pairs[i].key))
 			{
-				int key = -1 - cbor_get_int(pairs[i].key);
+				int key = -1 - static_cast<int>(cbor_get_int(pairs[i].key));
 				if (key == COSE_PUB_KEY_X)
 				{
 					if (cbor_isa_bytestring(pairs[i].value))
@@ -193,9 +193,9 @@ static int EcKeyFromCBOR(const std::string& cborPubKey, EC_KEY** ecKey, int* alg
 		// secp256r1 is called prime256v1 in OpenSSL (RFC 5480, Section 2.1.1.1)
 		*ecKey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
 		BIGNUM* bnx = BN_new();
-		BN_bin2bn(x.data(), x.size(), bnx);
+		BN_bin2bn(x.data(), static_cast<int>(x.size()), bnx);
 		BIGNUM* bny = BN_new();
-		BN_bin2bn(y.data(), y.size(), bny);
+		BN_bin2bn(y.data(), static_cast<int>(y.size()), bny);
 		EC_KEY_set_public_key_affine_coordinates(*ecKey, bnx, bny);
 		BN_free(bnx);
 		BN_free(bny);
@@ -877,7 +877,7 @@ int FIDODevice::SignAndVerifyAssertion(
 		}
 
 		res = EcKeyFromCBOR(pubKey, &ecKey, &algorithm);
-		if (ecKey == nullptr)
+		if (res != FIDO_OK || ecKey == nullptr)
 		{
 			EDUMFAError("Failed to create EC_KEY");
 			return FIDO_ERR_INTERNAL;
@@ -1165,7 +1165,7 @@ int FIDODevice::GetDeviceInfo()
 	if (info == NULL)
 	{
 		EDUMFAError("Unable to allocate memory for fido_cbor_info_t!");
-		res = FIDO_ERR_INTERNAL;
+		return FIDO_ERR_INTERNAL;
 	}
 	// This call may block
 	res = fido_dev_get_cbor_info(dev.get(), info);
@@ -1201,7 +1201,7 @@ int FIDODevice::GetDeviceInfo()
 	}
 
 	fido_cbor_info_free(&info);
-	return 0;
+	return res;
 }
 
 std::string FIDODevice::BuildAttestationObject(fido_cred_t* cred)

@@ -78,7 +78,7 @@ public:
 		if (_expirationDays <= 0) return 0;
 
 		time_t now = time(nullptr);
-		time_t exp = now + (_expirationDays * 24 * 60 * 60);
+		time_t exp = now + (static_cast<time_t>(_expirationDays) * 24 * 60 * 60);
 
 		// Debug output of the calculated time
 		EDUMFADebug(

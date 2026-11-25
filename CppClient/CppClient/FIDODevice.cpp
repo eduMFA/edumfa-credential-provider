@@ -298,7 +298,6 @@ namespace
 		if ((*assert = fido_assert_new()) == NULL)
 		{
 			EDUMFAError("fido_assert_new failed.");
-			fido_dev_close(dev.get());
 			return FIDO_ERR_INTERNAL;
 		}
 
@@ -621,7 +620,6 @@ std::vector<std::string> FIDODevice::GetRpIds(std::string pin) const
 	if (!rp)
 	{
 		EDUMFAError("fido_credman_rp_new failed.");
-		fido_dev_close(dev.get());
 		return ret; // throw exception
 	}
 
@@ -630,7 +628,6 @@ std::vector<std::string> FIDODevice::GetRpIds(std::string pin) const
 	{
 		EDUMFAError("fido_credman_get_dev_rp: " + std::string(fido_strerr(res)) + " code: " + std::to_string(res));
 		fido_credman_rp_free(&rp);
-		fido_dev_close(dev.get());
 		return ret; // throw exception
 	}
 

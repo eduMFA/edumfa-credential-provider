@@ -472,7 +472,7 @@ HRESULT CProvider::GetCredentialAt(
 		}
 
 		EDUMFADebug("Initializing CCredential");
-		_credential = std::make_unique<CCredential>(_config);
+		auto tempCredential = std::make_unique<CCredential>(_config);
 
 		const FIELD_STATE_PAIR* pfsp = nullptr;
 		if (cpus == CPUS_UNLOCK_WORKSTATION)
@@ -484,10 +484,16 @@ HRESULT CProvider::GetCredentialAt(
 			pfsp = s_rgScenarioUsername;
 		}
 
-		hr = _credential->Initialize(
+		hr = tempCredential->Initialize(
 			s_rgScenarioCredProvFieldDescriptors,
 			pfsp,
 			serializedUser, serializedDomain, serializedPass);
+
+		// Only cache fully initialized credentials so a failed attempt is retried on the next call
+		if (SUCCEEDED(hr))
+		{
+			_credential = std::move(tempCredential);
+		}
 	}
 	else
 	{

@@ -35,7 +35,8 @@ using namespace std;
 
 typedef NTSTATUS(WINAPI* RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
 
-WindowsInfo GetOSVersion() {
+WindowsInfo GetOSVersion()
+{
 	HMODULE hMod = GetModuleHandleW(L"ntdll.dll");
 	if (!hMod) return { 0, 0, 0, false, "Error" };
 
@@ -45,7 +46,8 @@ WindowsInfo GetOSVersion() {
 	RTL_OSVERSIONINFOEXW rovi = { 0 };
 	rovi.dwOSVersionInfoSize = sizeof(rovi);
 
-	if (fxPtr((PRTL_OSVERSIONINFOW)&rovi) != 0x00000000) { // STATUS_SUCCESS
+	if (fxPtr((PRTL_OSVERSIONINFOW)&rovi) != 0x00000000)
+	{ // STATUS_SUCCESS
 		return { 0, 0, 0, false, "Error" };
 	}
 
@@ -59,22 +61,33 @@ WindowsInfo GetOSVersion() {
 
 	std::stringstream ss;
 
-	if (info.major == 10) {
-		if (info.isServer) {
+	if (info.major == 10)
+	{
+		if (info.isServer)
+		{
 			// Server Mapping based on Build Number
-			if (info.build >= 26100) ss << "Windows Server 2025";
-			else if (info.build >= 20348) ss << "Windows Server 2022";
-			else if (info.build >= 17763) ss << "Windows Server 2019";
-			else if (info.build >= 14393) ss << "Windows Server 2016";
-			else ss << "Windows Server (Old/Unknown)";
+			if (info.build >= 26100)
+				ss << "Windows Server 2025";
+			else if (info.build >= 20348)
+				ss << "Windows Server 2022";
+			else if (info.build >= 17763)
+				ss << "Windows Server 2019";
+			else if (info.build >= 14393)
+				ss << "Windows Server 2016";
+			else
+				ss << "Windows Server (Old/Unknown)";
 		}
-		else {
+		else
+		{
 			// Client Mapping
-			if (info.build >= 22000) ss << "Windows 11";
-			else ss << "Windows 10";
+			if (info.build >= 22000)
+				ss << "Windows 11";
+			else
+				ss << "Windows 10";
 		}
 	}
-	else {
+	else
+	{
 		// Fallback for older/newer unknown versions
 		ss << "Windows " << info.major << "." << info.minor;
 	}
@@ -83,11 +96,11 @@ WindowsInfo GetOSVersion() {
 	return info;
 }
 
-std::string WindowsInfoToString(const WindowsInfo& info) {
+std::string WindowsInfoToString(const WindowsInfo& info)
+{
 	std::stringstream ss;
-	ss << info.versionString
-		<< " (Version " << info.major << "." << info.minor << "." << info.build << ")"
-		<< (info.isServer ? " [Server]" : " [Workstation]");
+	ss << info.versionString << " (Version " << info.major << "." << info.minor << "." << info.build << ")"
+	   << (info.isServer ? " [Server]" : " [Workstation]");
 	return ss.str();
 }
 
@@ -169,7 +182,9 @@ void Configuration::Load()
 	{
 		if (language.size() != 2)
 		{
-			EDUMFAError("Configured language code is invalid: " + language + ", only 2 characters allowed, like 'en' or 'de'. Using language from system.");
+			EDUMFAError(
+				"Configured language code is invalid: " + language
+				+ ", only 2 characters allowed, like 'en' or 'de'. Using language from system.");
 		}
 		else
 		{
@@ -194,10 +209,12 @@ void Configuration::Load()
 	webAuthnOfflinePreferred = rr.GetBool(L"webauthn_offline_preferred");
 	webAuthnOfflineHideFirstStep = rr.GetBool(L"webauthn_offline_hide_first_step");
 	disablePasskey = rr.GetBool(L"disable_passkey");
-	if (disablePasskey) {
+	if (disablePasskey)
+	{
 		EDUMFADebug("Passkey usage is disabled via configuration, also disabling passkey_first_step.");
 	}
-	else {
+	else
+	{
 		passkeyFirstStep = rr.GetBool(L"passkey_first_step");
 	}
 	trustedRPIDs = rr.GetMultiSZ(L"trusted_rpids");
@@ -233,7 +250,9 @@ std::string Configuration::ValidateAcceptLanguage(std::wstring configEntry)
 	{
 		// Get the ISO 639 language name (e.g., "en")
 		wchar_t wlanguage[9] = { 0 };
-		if (GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SISO639LANGNAME, wlanguage, sizeof(wlanguage) / sizeof(wchar_t)) == 0)
+		if (GetLocaleInfoEx(
+				LOCALE_NAME_USER_DEFAULT, LOCALE_SISO639LANGNAME, wlanguage, sizeof(wlanguage) / sizeof(wchar_t))
+			== 0)
 		{
 			EDUMFAError("Unable to get ISO 639 language name, using default en-US.");
 			return "en-US";
@@ -241,7 +260,9 @@ std::string Configuration::ValidateAcceptLanguage(std::wstring configEntry)
 
 		// Get the ISO 3166 country/region name (e.g., "US")
 		wchar_t country[9] = { 0 };
-		if (GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SISO3166CTRYNAME, country, sizeof(country) / sizeof(wchar_t)) == 0)
+		if (GetLocaleInfoEx(
+				LOCALE_NAME_USER_DEFAULT, LOCALE_SISO3166CTRYNAME, country, sizeof(country) / sizeof(wchar_t))
+			== 0)
 		{
 			EDUMFAError("Unable to get ISO 3166 country name, using default en-US.");
 			return "en-US";
@@ -250,8 +271,10 @@ std::string Configuration::ValidateAcceptLanguage(std::wstring configEntry)
 		std::wstring wresult = wlanguage;
 		EDUMFADebug("Language result: " + Convert::ToString(wresult));
 		wresult += L"-";
-		for (wchar_t& c : wresult) c = towlower(c);
-		for (wchar_t& c : country) c = towlower(c);
+		for (wchar_t& c : wresult)
+			c = towlower(c);
+		for (wchar_t& c : country)
+			c = towlower(c);
 		wresult += country;
 		return Convert::ToString(wresult);
 	}
@@ -264,7 +287,9 @@ std::string Configuration::ValidateAcceptLanguage(std::wstring configEntry)
 			EDUMFAError("Configured Accept-Language format is invalid: " + str + ". Using default en-US.");
 			return "en-US";
 		}
-		else if (std::isalpha(str[0]) && std::isalpha(str[1]) && str[2] == '-' && std::isalpha(str[3]) && std::isalpha(str[4]))
+		else if (
+			std::isalpha(str[0]) && std::isalpha(str[1]) && str[2] == '-' && std::isalpha(str[3])
+			&& std::isalpha(str[4]))
 		{
 			return str;
 		}

@@ -21,7 +21,6 @@
 **
 ** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-
 #ifndef WIN32_NO_STATUS
 #include <ntstatus.h>
 #define WIN32_NO_STATUS
@@ -50,7 +49,7 @@
 #include <secext.h>
 #include <Translator.h>
 
-#pragma comment (lib, "Gdiplus.lib")
+#pragma comment(lib, "Gdiplus.lib")
 #pragma comment(lib, "Netapi32.lib")
 #pragma comment(lib, "Secur32.lib")
 
@@ -59,7 +58,9 @@ const std::wstring IMAGE_BASE64_PREFIX = L"data:image/png;base64,";
 using namespace std;
 
 CCredential::CCredential(std::shared_ptr<Configuration> c) :
-	_config(c), _util(_config), _eduMFA(c->piconfig)
+	_config(c),
+	_util(_config),
+	_eduMFA(c->piconfig)
 {
 	_cRef = 1;
 	_pCredProvCredentialEvents = nullptr;
@@ -88,8 +89,7 @@ HRESULT CCredential::Initialize(
 	__in const FIELD_STATE_PAIR* rgfsp,
 	__in_opt PWSTR userName,
 	__in_opt PWSTR domainName,
-	__in_opt PWSTR password
-)
+	__in_opt PWSTR password)
 {
 	EDUMFADebug(__FUNCTION__);
 
@@ -206,9 +206,7 @@ HRESULT CCredential::StopPoll()
 }
 
 // LogonUI calls this in order to give us a callback in case we need to notify it of anything.
-HRESULT CCredential::Advise(
-	__in ICredentialProviderCredentialEvents* pcpce
-)
+HRESULT CCredential::Advise(__in ICredentialProviderCredentialEvents* pcpce)
 {
 	EDUMFADebug(__FUNCTION__);
 	if (_pCredProvCredentialEvents != nullptr)
@@ -275,14 +273,15 @@ HRESULT CCredential::SetSelected(__out BOOL* pbAutoLogon)
 	else
 	{
 		// This is the initial setup, setting the mode etc.
-		if (_config->credential.passwordMustChange
-			&& _config->provider.cpu == CPUS_UNLOCK_WORKSTATION)
+		if (_config->credential.passwordMustChange && _config->provider.cpu == CPUS_UNLOCK_WORKSTATION)
 		{
 			// We cant handle a password change while the machine is locked, so we guide the user to sign
 			// out and in again like windows does
 			EDUMFADebug("Password must change in CPUS_UNLOCK_WORKSTATION");
-			_pCredProvCredentialEvents->SetFieldString(this, FID_LARGE_TEXT, L"Go back until you are asked to sign in.");
-			_pCredProvCredentialEvents->SetFieldString(this, FID_SMALL_TEXT, L"To change your password, sign out and in again.");
+			_pCredProvCredentialEvents->SetFieldString(
+				this, FID_LARGE_TEXT, L"Go back until you are asked to sign in.");
+			_pCredProvCredentialEvents->SetFieldString(
+				this, FID_SMALL_TEXT, L"To change your password, sign out and in again.");
 			_pCredProvCredentialEvents->SetFieldState(this, FID_PASSWORD, CPFS_HIDDEN);
 			_pCredProvCredentialEvents->SetFieldState(this, FID_OTP, CPFS_HIDDEN);
 		}
@@ -361,7 +360,8 @@ HRESULT CCredential::SetDeselected()
 
 	HRESULT hr = S_OK;
 
-	hr = _util.Clear(_rgFieldStrings, _rgCredProvFieldDescriptors, this, _pCredProvCredentialEvents, CLEAR_FIELDS_EDIT_AND_CRYPT);
+	hr = _util.Clear(
+		_rgFieldStrings, _rgCredProvFieldDescriptors, this, _pCredProvCredentialEvents, CLEAR_FIELDS_EDIT_AND_CRYPT);
 	hr = SetOfflineInfo("");
 	hr = ResetMode();
 	_config->credential.domain = L"";
@@ -381,8 +381,7 @@ HRESULT CCredential::SetDeselected()
 HRESULT CCredential::GetFieldState(
 	__in DWORD dwFieldID,
 	__out CREDENTIAL_PROVIDER_FIELD_STATE* pcpfs,
-	__out CREDENTIAL_PROVIDER_FIELD_INTERACTIVE_STATE* pcpfis
-)
+	__out CREDENTIAL_PROVIDER_FIELD_INTERACTIVE_STATE* pcpfis)
 {
 	HRESULT hr = S_OK;
 
@@ -401,10 +400,7 @@ HRESULT CCredential::GetFieldState(
 }
 
 // Sets ppwsz to the string value of the field at the index dwFieldID.
-HRESULT CCredential::GetStringValue(
-	__in DWORD dwFieldID,
-	__deref_out PWSTR* ppwsz
-)
+HRESULT CCredential::GetStringValue(__in DWORD dwFieldID, __deref_out PWSTR* ppwsz)
 {
 	HRESULT hr = S_OK;
 
@@ -438,8 +434,7 @@ HRESULT CCredential::LoadBitmapFromPathOrResource(const std::wstring& bitmapPath
 		DWORD const dwAttrib = GetFileAttributesA(lpszBitmapPath);
 		EDUMFADebug(dwAttrib);
 
-		if (dwAttrib != INVALID_FILE_ATTRIBUTES
-			&& !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))
+		if (dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))
 		{
 			hbmp = (HBITMAP)LoadImageA(nullptr, lpszBitmapPath, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
@@ -489,10 +484,7 @@ HRESULT CCredential::SetDefaultBitmap()
 }
 
 // Gets the image to show in the user tile.
-HRESULT CCredential::GetBitmapValue(
-	__in DWORD dwFieldID,
-	__out HBITMAP* phbmp
-)
+HRESULT CCredential::GetBitmapValue(__in DWORD dwFieldID, __out HBITMAP* phbmp)
 {
 	EDUMFADebug(__FUNCTION__);
 
@@ -515,10 +507,7 @@ HRESULT CCredential::GetBitmapValue(
 // adjacent to. We recommend that the submit button is placed next to the last
 // field which the user is required to enter information in. Optional fields
 // should be below the submit button.
-HRESULT CCredential::GetSubmitButtonValue(
-	__in DWORD dwFieldID,
-	__out DWORD* pdwAdjacentTo
-)
+HRESULT CCredential::GetSubmitButtonValue(__in DWORD dwFieldID, __out DWORD* pdwAdjacentTo)
 {
 	EDUMFADebug(__FUNCTION__);
 	//EDUMFADebug("Submit Button ID:" + to_string(dwFieldID));
@@ -534,10 +523,7 @@ HRESULT CCredential::GetSubmitButtonValue(
 
 // Sets the value of a field which can accept a string as a value.
 // This is called on each keystroke when a user types into an edit field.
-HRESULT CCredential::SetStringValue(
-	__in DWORD dwFieldID,
-	__in PCWSTR pwz
-)
+HRESULT CCredential::SetStringValue(__in DWORD dwFieldID, __in PCWSTR pwz)
 {
 	HRESULT hr = S_OK;
 
@@ -631,8 +617,12 @@ HRESULT CCredential::SetOfflineInfo(std::string username)
 				else
 				{
 					// <serial> (XX OTPs remaining)
-					message.append(Convert::ToWString(pair.first)).append(L" (").append(to_wstring(pair.second)).append(L" ")
-						.append(EDUMFATranslate(TEXT_OTPS_REMAINING)).append(L")\n");
+					message.append(Convert::ToWString(pair.first))
+						.append(L" (")
+						.append(to_wstring(pair.second))
+						.append(L" ")
+						.append(EDUMFATranslate(TEXT_OTPS_REMAINING))
+						.append(L")\n");
 				}
 			}
 
@@ -716,8 +706,9 @@ Mode CCredential::SelectFIDOMode(std::string userVerification, bool offline)
 
 HRESULT CCredential::SetMode(Mode mode)
 {
-	EDUMFADebug("SetMode: New Mode=" + _config->ModeToString(mode) + ", old Mode=" + _config->ModeString() +
-		", passkey = " + to_string(_config->usePasskey) + ", offlineFIDO = " + to_string(_config->useOfflineFIDO));
+	EDUMFADebug(
+		"SetMode: New Mode=" + _config->ModeToString(mode) + ", old Mode=" + _config->ModeString()
+		+ ", passkey = " + to_string(_config->usePasskey) + ", offlineFIDO = " + to_string(_config->useOfflineFIDO));
 
 	if (_pCredProvCredentialEvents == nullptr)
 	{
@@ -765,13 +756,15 @@ HRESULT CCredential::SetMode(Mode mode)
 
 		// Force OTP field visibility
 		_pCredProvCredentialEvents->SetFieldState(this, FID_OTP, CPFS_DISPLAY_IN_SELECTED_TILE);
-		_pCredProvCredentialEvents->SetFieldString(this, FID_FIDO_ONLINE, EDUMFATranslate(TEXT_USE_ONLINE_FIDO).c_str());
+		_pCredProvCredentialEvents->SetFieldString(
+			this, FID_FIDO_ONLINE, EDUMFATranslate(TEXT_USE_ONLINE_FIDO).c_str());
 
 		// Determine small text based on errors/response
 		smallText = EDUMFATranslate(TEXT_OTP_PROMPT);
 		if (_config->lastResponse.has_value())
 		{
-			const bool hideFirstStepError = _config->hideFirstStepResponseError && IsModeOneOf(oldMode, Mode::USERNAME, Mode::USERNAMEPASSWORD);
+			const bool hideFirstStepError =
+				_config->hideFirstStepResponseError && IsModeOneOf(oldMode, Mode::USERNAME, Mode::USERNAMEPASSWORD);
 			std::string serverMsg = _config->lastResponse->GetNonFIDOMessage();
 
 			if (!hideFirstStepError && !serverMsg.empty() && !_config->lastResponse->isAuthenticationSuccessful())
@@ -812,22 +805,28 @@ HRESULT CCredential::SetMode(Mode mode)
 		submitButtonField = FID_FIDO_PIN;
 
 		// PIN Field State logic
-		if (mode == Mode::SEC_KEY_NO_PIN) pinState = CPFIS_NONE;
-		else pinState = CPFIS_FOCUSED;
+		if (mode == Mode::SEC_KEY_NO_PIN)
+			pinState = CPFIS_NONE;
+		else
+			pinState = CPFIS_FOCUSED;
 
 		_pCredProvCredentialEvents->SetFieldInteractiveState(this, FID_FIDO_PIN, pinState);
 
 		// Link Text logic
 		if (_config->usePasskey)
-			_pCredProvCredentialEvents->SetFieldString(this, FID_FIDO_ONLINE, EDUMFATranslate(TEXT_LOGIN_WITH_USERNAME).c_str());
+			_pCredProvCredentialEvents->SetFieldString(
+				this, FID_FIDO_ONLINE, EDUMFATranslate(TEXT_LOGIN_WITH_USERNAME).c_str());
 		else
 			_pCredProvCredentialEvents->SetFieldString(this, FID_FIDO_ONLINE, EDUMFATranslate(TEXT_USE_OTP).c_str());
 
 		// Text Logic
 		if (mode == Mode::SEC_KEY_REG_PIN)
 		{
-			if (_lastStatus == FIDO_ERR_PIN_INVALID) smallText = EDUMFATranslate(TEXT_FIDO_ERR_PIN_INVALID);
-			else smallText = EDUMFATranslate(TEXT_PASSKEY_REGISTRATION) + L". " + EDUMFATranslate(TEXT_SEC_KEY_ENTER_PIN_PROMPT);
+			if (_lastStatus == FIDO_ERR_PIN_INVALID)
+				smallText = EDUMFATranslate(TEXT_FIDO_ERR_PIN_INVALID);
+			else
+				smallText =
+					EDUMFATranslate(TEXT_PASSKEY_REGISTRATION) + L". " + EDUMFATranslate(TEXT_SEC_KEY_ENTER_PIN_PROMPT);
 		}
 		else if (mode == Mode::SEC_KEY_PIN)
 		{
@@ -880,11 +879,13 @@ HRESULT CCredential::SetMode(Mode mode)
 	if (largeText.empty()) largeText = EDUMFATranslate(TEXT_LOGIN_TEXT); // Default
 
 	_pCredProvCredentialEvents->SetFieldString(this, FID_LARGE_TEXT, largeText.c_str());
-	_pCredProvCredentialEvents->SetFieldState(this, FID_LARGE_TEXT, largeText.empty() ? CPFS_HIDDEN : CPFS_DISPLAY_IN_SELECTED_TILE);
+	_pCredProvCredentialEvents->SetFieldState(
+		this, FID_LARGE_TEXT, largeText.empty() ? CPFS_HIDDEN : CPFS_DISPLAY_IN_SELECTED_TILE);
 
 	// Small Text (Prompt)
 	_pCredProvCredentialEvents->SetFieldString(this, FID_SMALL_TEXT, smallText.c_str());
-	_pCredProvCredentialEvents->SetFieldState(this, FID_SMALL_TEXT, smallText.empty() ? CPFS_HIDDEN : CPFS_DISPLAY_IN_SELECTED_TILE);
+	_pCredProvCredentialEvents->SetFieldState(
+		this, FID_SMALL_TEXT, smallText.empty() ? CPFS_HIDDEN : CPFS_DISPLAY_IN_SELECTED_TILE);
 
 	// Subtext (Domain Hint)
 	if (_config->showDomainHint && !_config->credential.domain.empty())
@@ -915,7 +916,6 @@ HRESULT CCredential::SetMode(Mode mode)
 	}
 	CoTaskMemFree(currentUsername);
 
-
 	// Configure Command Links (Visibility & Text)
 
 	// Determine Link Visibility Flags
@@ -938,7 +938,9 @@ HRESULT CCredential::SetMode(Mode mode)
 	if (_config->webAuthnOfflineSecondStep || _config->IsFirstStep())
 	{
 		// Check if explicitly hidden in config
-		const bool hiddenInFirstStep = (_config->IsModeOneOf(Mode::USERNAME, Mode::USERNAMEPASSWORD, Mode::PASSWORD) && _config->webAuthnOfflineHideFirstStep);
+		const bool hiddenInFirstStep =
+			(_config->IsModeOneOf(Mode::USERNAME, Mode::USERNAMEPASSWORD, Mode::PASSWORD)
+			 && _config->webAuthnOfflineHideFirstStep);
 
 		if (!hiddenInFirstStep)
 		{
@@ -963,14 +965,13 @@ HRESULT CCredential::SetMode(Mode mode)
 
 	// Special Case: Offline link in Second Step to make it look the same as online authentication ("seamless").
 	// Only show if the setting is enabled AND the current user actually has offline data.
-	if ((mode == Mode::EDUMFA || mode > Mode::SEC_KEY_ANY)
-		&& _config->webAuthnOfflineSecondStep
-		&& !showFidoOnline)
+	if ((mode == Mode::EDUMFA || mode > Mode::SEC_KEY_ANY) && _config->webAuthnOfflineSecondStep && !showFidoOnline)
 	{
 		// Check if THIS user has data.
 		if (_eduMFA.OfflineFIDODataExistsFor(_config->credential.username))
 		{
-			_pCredProvCredentialEvents->SetFieldString(this, FID_FIDO_OFFLINE, EDUMFATranslate(TEXT_USE_ONLINE_FIDO).c_str());
+			_pCredProvCredentialEvents->SetFieldString(
+				this, FID_FIDO_OFFLINE, EDUMFATranslate(TEXT_USE_ONLINE_FIDO).c_str());
 			showFidoOffline = true;
 		}
 	}
@@ -980,7 +981,9 @@ HRESULT CCredential::SetMode(Mode mode)
 	if (_config->provider.cpu == CPUS_UNLOCK_WORKSTATION && mode == Mode::PASSWORD) showReset = false;
 
 	// Overrides: Hide EVERYTHING during Enrollment or Change Password or User selection
-	if (_config->IsModeOneOf(Mode::SEC_KEY_REG, Mode::SEC_KEY_REG_PIN, Mode::CHANGE_PASSWORD, Mode::SEC_KEY_SET_PIN, Mode::SEC_KEY_SELECT_USER))
+	if (_config->IsModeOneOf(
+			Mode::SEC_KEY_REG, Mode::SEC_KEY_REG_PIN, Mode::CHANGE_PASSWORD, Mode::SEC_KEY_SET_PIN,
+			Mode::SEC_KEY_SELECT_USER))
 	{
 		showFidoOnline = false;
 		showFidoOffline = false;
@@ -989,9 +992,12 @@ HRESULT CCredential::SetMode(Mode mode)
 	}
 
 	// Apply states to links (FIDO Online, FIDO Offline, Reset)
-	_pCredProvCredentialEvents->SetFieldState(this, FID_FIDO_ONLINE, showFidoOnline ? CPFS_DISPLAY_IN_SELECTED_TILE : CPFS_HIDDEN);
-	_pCredProvCredentialEvents->SetFieldState(this, FID_FIDO_OFFLINE, showFidoOffline ? CPFS_DISPLAY_IN_SELECTED_TILE : CPFS_HIDDEN);
-	_pCredProvCredentialEvents->SetFieldState(this, FID_RESET_LINK, showReset ? CPFS_DISPLAY_IN_SELECTED_TILE : CPFS_HIDDEN);
+	_pCredProvCredentialEvents->SetFieldState(
+		this, FID_FIDO_ONLINE, showFidoOnline ? CPFS_DISPLAY_IN_SELECTED_TILE : CPFS_HIDDEN);
+	_pCredProvCredentialEvents->SetFieldState(
+		this, FID_FIDO_OFFLINE, showFidoOffline ? CPFS_DISPLAY_IN_SELECTED_TILE : CPFS_HIDDEN);
+	_pCredProvCredentialEvents->SetFieldState(
+		this, FID_RESET_LINK, showReset ? CPFS_DISPLAY_IN_SELECTED_TILE : CPFS_HIDDEN);
 
 	// Update Offline Info
 	if (_config->offlineShowInfo)
@@ -1003,10 +1009,13 @@ HRESULT CCredential::SetMode(Mode mode)
 	}
 
 	// Cancel Enrollment Link
-	const bool versionHigherThan312 = _config->lastResponseWithChallenge && _config->lastResponseWithChallenge->IsVersionHigherOrEqual(3, 12);
-	if ((_enrollmentInProgress || _pollEnrollmentInProgress) && versionHigherThan312 && _config->lastResponseWithChallenge->isEnrollCancellable)
+	const bool versionHigherThan312 =
+		_config->lastResponseWithChallenge && _config->lastResponseWithChallenge->IsVersionHigherOrEqual(3, 12);
+	if ((_enrollmentInProgress || _pollEnrollmentInProgress) && versionHigherThan312
+		&& _config->lastResponseWithChallenge->isEnrollCancellable)
 	{
-		_pCredProvCredentialEvents->SetFieldString(this, FID_CANCEL_ENROLLMENT, EDUMFATranslate(TEXT_CANCEL_ENROLLMENT).c_str());
+		_pCredProvCredentialEvents->SetFieldString(
+			this, FID_CANCEL_ENROLLMENT, EDUMFATranslate(TEXT_CANCEL_ENROLLMENT).c_str());
 		_pCredProvCredentialEvents->SetFieldState(this, FID_CANCEL_ENROLLMENT, CPFS_DISPLAY_IN_SELECTED_TILE);
 	}
 
@@ -1044,7 +1053,9 @@ HRESULT CCredential::FullReset()
 	_config->credential.password = L"";
 	if (_pCredProvCredentialEvents != nullptr)
 	{
-		_util.Clear(_rgFieldStrings, _rgCredProvFieldDescriptors, this, _pCredProvCredentialEvents, CLEAR_FIELDS_EDIT_AND_CRYPT);
+		_util.Clear(
+			_rgFieldStrings, _rgCredProvFieldDescriptors, this, _pCredProvCredentialEvents,
+			CLEAR_FIELDS_EDIT_AND_CRYPT);
 
 		if (_config->provider.cpu == CPUS_UNLOCK_WORKSTATION)
 		{
@@ -1111,8 +1122,7 @@ HRESULT CCredential::SetDomainHint(std::wstring domain)
 HRESULT CCredential::GetComboBoxValueCount(
 	__in DWORD dwFieldID,
 	__out DWORD* pcItems,
-	__out_range(< , *pcItems) DWORD* pdwSelectedItem
-)
+	__out_range(<, *pcItems) DWORD* pdwSelectedItem)
 {
 	EDUMFADebug(__FUNCTION__);
 
@@ -1277,10 +1287,10 @@ HRESULT CCredential::GetSerialization(
 	__out CREDENTIAL_PROVIDER_GET_SERIALIZATION_RESPONSE* pcpgsr,
 	__out CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION* pcpcs,
 	__deref_out_opt PWSTR* ppwszOptionalStatusText,
-	__out CREDENTIAL_PROVIDER_STATUS_ICON* pcpsiOptionalStatusIcon
-)
+	__out CREDENTIAL_PROVIDER_STATUS_ICON* pcpsiOptionalStatusIcon)
 {
-	EDUMFADebug("CCredential::GetSerialization Mode=" + _config->ModeString() + ", lastStatus=" + to_string(_lastStatus));
+	EDUMFADebug(
+		"CCredential::GetSerialization Mode=" + _config->ModeString() + ", lastStatus=" + to_string(_lastStatus));
 	HRESULT hr = S_OK;
 	/*
 	CPGSR_NO_CREDENTIAL_NOT_FINISHED
@@ -1315,7 +1325,8 @@ HRESULT CCredential::GetSerialization(
 			ShowErrorMessage(EDUMFATranslate(TEXT_PINS_DO_NOT_MATCH).c_str());
 			// Reset status so the error doesn't persist if we refresh for other reasons
 			_lastStatus = S_OK;
-			_util.Clear(_rgFieldStrings, _rgCredProvFieldDescriptors, this, _pCredProvCredentialEvents, CLEAR_FIELDS_CRYPT);
+			_util.Clear(
+				_rgFieldStrings, _rgCredProvFieldDescriptors, this, _pCredProvCredentialEvents, CLEAR_FIELDS_CRYPT);
 		}
 
 		// Stay in this mode and return
@@ -1351,9 +1362,7 @@ HRESULT CCredential::GetSerialization(
 			std::wstring targetDomain = _config->credential.domain;
 			std::wstring computerName = _util.ComputerName();
 
-			const bool isLocal = (targetDomain == computerName ||
-				targetDomain == L"WORKGROUP" ||
-				targetDomain == L".");
+			const bool isLocal = (targetDomain == computerName || targetDomain == L"WORKGROUP" || targetDomain == L".");
 
 			if (isLocal)
 			{
@@ -1361,11 +1370,9 @@ HRESULT CCredential::GetSerialization(
 				targetDomain = computerName;
 			}
 
-			hr = _util.KerberosChangePassword(pcpgsr, pcpcs,
-				_config->credential.username,
-				_config->credential.password,
-				_config->credential.newPassword1,
-				targetDomain);
+			hr = _util.KerberosChangePassword(
+				pcpgsr, pcpcs, _config->credential.username, _config->credential.password,
+				_config->credential.newPassword1, targetDomain);
 		}
 		else
 		{
@@ -1377,8 +1384,9 @@ HRESULT CCredential::GetSerialization(
 	// Logon after pw change with the new pw
 	else if (_config->credential.passwordChanged)
 	{
-		hr = _util.KerberosLogon(pcpgsr, pcpcs, _config->provider.cpu,
-			_config->credential.username, _config->credential.newPassword1, _config->credential.domain);
+		hr = _util.KerberosLogon(
+			pcpgsr, pcpcs, _config->provider.cpu, _config->credential.username, _config->credential.newPassword1,
+			_config->credential.domain);
 		_config->credential.passwordChanged = false;
 	}
 	// Normal authentication: Username, Password, eduMFA
@@ -1395,8 +1403,8 @@ HRESULT CCredential::GetSerialization(
 			if (lastResponse)
 			{
 				continueWithFIDO = lastResponse->preferredMode == "webauthn"
-					|| (_config->webAuthnPreferred && (lastResponse->GetFIDOSignRequest()))
-					|| (_config->mode > Mode::SEC_KEY_ANY);
+								   || (_config->webAuthnPreferred && (lastResponse->GetFIDOSignRequest()))
+								   || (_config->mode > Mode::SEC_KEY_ANY);
 			}
 
 			const bool hasOnlineRequest = lastResponse && lastResponse->GetFIDOSignRequest().has_value();
@@ -1404,8 +1412,7 @@ HRESULT CCredential::GetSerialization(
 			// Alternatively, if webAuthnOfflineSecondStep is enabled, the user has offline FIDO data and the offlinePreferFIDO is set,
 			// continue with a FIDO mode aswell.
 			if (_config->webAuthnOfflinePreferred && _config->webAuthnOfflineSecondStep
-				&& _eduMFA.OfflineFIDODataExistsFor(_config->credential.username)
-				&& !hasOnlineRequest)
+				&& _eduMFA.OfflineFIDODataExistsFor(_config->credential.username) && !hasOnlineRequest)
 			{
 				continueWithFIDO = true;
 				_config->useOfflineFIDO = true; // Simulate the link click
@@ -1422,7 +1429,8 @@ HRESULT CCredential::GetSerialization(
 			if (lastResponse && lastResponse->passkeyRegistration && _lastStatus == S_OK)
 			{
 				// Go to Connect directly for the first time
-				if (!_passkeyRegistrationFailed && !_config->IsModeOneOf(Mode::SEC_KEY_REG, Mode::SEC_KEY_REG_PIN, Mode::SEC_KEY_SET_PIN))
+				if (!_passkeyRegistrationFailed
+					&& !_config->IsModeOneOf(Mode::SEC_KEY_REG, Mode::SEC_KEY_REG_PIN, Mode::SEC_KEY_SET_PIN))
 				{
 					SetMode(Mode::SEC_KEY_REG);
 					_config->doAutoLogon = true;
@@ -1437,7 +1445,8 @@ HRESULT CCredential::GetSerialization(
 				}
 			}
 			// Regular second step, asking for second factor. Can also be that the mode was switched (FIDO <-> OTP)
-			else if (_config->IsModeOneOf(Mode::USERNAME, Mode::USERNAMEPASSWORD, Mode::PASSWORD)
+			else if (
+				_config->IsModeOneOf(Mode::USERNAME, Mode::USERNAMEPASSWORD, Mode::PASSWORD)
 				&& (_lastStatus == S_OK || _modeSwitched))
 			{
 				EDUMFADebug("Moving to eduMFA step");
@@ -1447,7 +1456,9 @@ HRESULT CCredential::GetSerialization(
 				*pcpgsr = CPGSR_NO_CREDENTIAL_NOT_FINISHED;
 				// For Mode::SEC_KEY_NO_DEVICE, Mode::SEC_KEY_NO_PIN or RDP (windows hello, also no PIN) we need to get to connect
 				// instantly to trigger the security key or windows hello on the source machine in case of RDP.
-				if (continueWithFIDO && (_config->IsModeOneOf(Mode::SEC_KEY_NO_DEVICE, Mode::SEC_KEY_NO_PIN) || _config->isRemoteSession))
+				if (continueWithFIDO
+					&& (_config->IsModeOneOf(Mode::SEC_KEY_NO_DEVICE, Mode::SEC_KEY_NO_PIN)
+						|| _config->isRemoteSession))
 				{
 					_config->doAutoLogon = true;
 					_config->provider.pCredentialProviderEvents->CredentialsChanged(_config->provider.upAdviseContext);
@@ -1459,15 +1470,19 @@ HRESULT CCredential::GetSerialization(
 				EDUMFADebug("Another challenge was triggered, repeating eduMFA step");
 				SetMode(continueWithFIDO ? SelectFIDOMode() : Mode::EDUMFA);
 				*pcpgsr = CPGSR_NO_CREDENTIAL_NOT_FINISHED;
-				if (continueWithFIDO && (_config->IsModeOneOf(Mode::SEC_KEY_NO_DEVICE, Mode::SEC_KEY_NO_PIN) || _config->isRemoteSession))
+				if (continueWithFIDO
+					&& (_config->IsModeOneOf(Mode::SEC_KEY_NO_DEVICE, Mode::SEC_KEY_NO_PIN)
+						|| _config->isRemoteSession))
 				{
 					_config->doAutoLogon = true;
 					_config->provider.pCredentialProviderEvents->CredentialsChanged(_config->provider.upAdviseContext);
 				}
 			}
 			// Show an error message if authentication failed or there is an error
-			else if (_lastStatus != S_OK || (lastResponse && lastResponse->challenges.empty() && !lastResponse->value &&
-				_config->mode >= Mode::EDUMFA))
+			else if (
+				_lastStatus != S_OK
+				|| (lastResponse && lastResponse->challenges.empty() && !lastResponse->value
+					&& _config->mode >= Mode::EDUMFA))
 			{
 				bool resetToFirstStep = false;
 				wstring errorMessage;
@@ -1593,13 +1608,15 @@ HRESULT CCredential::GetSerialization(
 			// Pack credentials for logon
 			if (_config->provider.cpu == CPUS_CREDUI)
 			{
-				hr = _util.CredPackAuthentication(pcpgsr, pcpcs, _config->provider.cpu,
-					_config->credential.username, _config->credential.password, _config->credential.domain);
+				hr = _util.CredPackAuthentication(
+					pcpgsr, pcpcs, _config->provider.cpu, _config->credential.username, _config->credential.password,
+					_config->credential.domain);
 			}
 			else
 			{
-				hr = _util.KerberosLogon(pcpgsr, pcpcs, _config->provider.cpu,
-					_config->credential.username, _config->credential.password, _config->credential.domain);
+				hr = _util.KerberosLogon(
+					pcpgsr, pcpcs, _config->provider.cpu, _config->credential.username, _config->credential.password,
+					_config->credential.domain);
 			}
 		}
 		else
@@ -1623,12 +1640,27 @@ HRESULT CCredential::GetSerialization(
 
 	if (pcpgsr)
 	{
-		if (*pcpgsr == CPGSR_NO_CREDENTIAL_FINISHED) { EDUMFADebug("CPGSR_NO_CREDENTIAL_FINISHED"); }
-		else if (*pcpgsr == CPGSR_NO_CREDENTIAL_NOT_FINISHED) { EDUMFADebug("CPGSR_NO_CREDENTIAL_NOT_FINISHED"); }
-		else if (*pcpgsr == CPGSR_RETURN_CREDENTIAL_FINISHED) { EDUMFADebug("CPGSR_RETURN_CREDENTIAL_FINISHED"); }
-		else if (*pcpgsr == CPGSR_RETURN_NO_CREDENTIAL_FINISHED) { EDUMFADebug("CPGSR_RETURN_NO_CREDENTIAL_FINISHED"); }
+		if (*pcpgsr == CPGSR_NO_CREDENTIAL_FINISHED)
+		{
+			EDUMFADebug("CPGSR_NO_CREDENTIAL_FINISHED");
+		}
+		else if (*pcpgsr == CPGSR_NO_CREDENTIAL_NOT_FINISHED)
+		{
+			EDUMFADebug("CPGSR_NO_CREDENTIAL_NOT_FINISHED");
+		}
+		else if (*pcpgsr == CPGSR_RETURN_CREDENTIAL_FINISHED)
+		{
+			EDUMFADebug("CPGSR_RETURN_CREDENTIAL_FINISHED");
+		}
+		else if (*pcpgsr == CPGSR_RETURN_NO_CREDENTIAL_FINISHED)
+		{
+			EDUMFADebug("CPGSR_RETURN_NO_CREDENTIAL_FINISHED");
+		}
 	}
-	else { EDUMFADebug("Unknown value for pcpgsr"); }
+	else
+	{
+		EDUMFADebug("Unknown value for pcpgsr");
+	}
 
 	EDUMFADebug("CCredential::GetSerialization - END");
 	return hr;
@@ -1683,14 +1715,8 @@ bool CCredential::CheckExcludedAccount()
 		if (!_config->exludedGroupNetBIOSaddress.empty())
 		{
 			nStatus = NetUserGetGroups(
-				_config->exludedGroupNetBIOSaddress.c_str(),
-				userOnly,
-				0,
-				(LPBYTE*)&pGroupInfo,
-				MAX_PREFERRED_LENGTH,
-				&entriesRead,
-				&totalEntries
-			);
+				_config->exludedGroupNetBIOSaddress.c_str(), userOnly, 0, (LPBYTE*)&pGroupInfo, MAX_PREFERRED_LENGTH,
+				&entriesRead, &totalEntries);
 
 			if (nStatus == NERR_Success && pGroupInfo)
 			{
@@ -1716,15 +1742,9 @@ bool CCredential::CheckExcludedAccount()
 		LOCALGROUP_USERS_INFO_0* pLocalGroupInfo = nullptr;
 		entriesRead = totalEntries = 0;
 		nStatus = NetUserGetLocalGroups(
-			NULL,
-			userAndDomain,
-			0,
+			NULL, userAndDomain, 0,
 			LG_INCLUDE_INDIRECT, // 0 would be only direct groups
-			(LPBYTE*)&pLocalGroupInfo,
-			MAX_PREFERRED_LENGTH,
-			&entriesRead,
-			&totalEntries
-		);
+			(LPBYTE*)&pLocalGroupInfo, MAX_PREFERRED_LENGTH, &entriesRead, &totalEntries);
 
 		if (nStatus == NERR_Success && pLocalGroupInfo)
 		{
@@ -1795,8 +1815,9 @@ bool CCredential::IsRpIdAllowed(const std::string& rpId)
 		}
 	}
 
-	EDUMFAError("FIDO Operation blocked! Request contained RPID '" + rpId +
-		"' which is not in the configured allow list (trusted_rpids)!");
+	EDUMFAError(
+		"FIDO Operation blocked! Request contained RPID '" + rpId
+		+ "' which is not in the configured allow list (trusted_rpids)!");
 
 	return false;
 }
@@ -1806,7 +1827,8 @@ std::optional<FIDODevice> CCredential::GetPreferredFIDODevice()
 	// Check if Windows Hello should be used:
 	// We are in CredUI (UAC) mode AND the admin has not disabled the use of native Windows Hello
 	// We are in a Remote Session (RDP **must** use Hello platform to tunnel)
-	const bool prioritizeHello = (_config->provider.cpu == CPUS_CREDUI && _config->useWindowsHelloForCredUI) || _config->isRemoteSession;
+	const bool prioritizeHello =
+		(_config->provider.cpu == CPUS_CREDUI && _config->useWindowsHelloForCredUI) || _config->isRemoteSession;
 	if (prioritizeHello)
 	{
 		auto wh = FIDODevice::GetWinHello();
@@ -1815,7 +1837,8 @@ std::optional<FIDODevice> CCredential::GetPreferredFIDODevice()
 			EDUMFADebug("GetPreferredFIDODevice: Found Windows Hello (Priority target)");
 			return wh;
 		}
-		EDUMFADebug("GetPreferredFIDODevice: Windows Hello requested but not found. Falling back to standard search...");
+		EDUMFADebug(
+			"GetPreferredFIDODevice: Windows Hello requested but not found. Falling back to standard search...");
 	}
 	// Standard Device Search
 	// If we are local, filter out Windows Hello (since we would have returned it above if we wanted it).
@@ -1836,7 +1859,9 @@ std::optional<FIDODevice> CCredential::GetPreferredFIDODevice()
 
 HRESULT CCredential::FIDOAuthentication(IQueryContinueWithStatus* pqcws)
 {
-	EDUMFADebug("FIDO2 Authentication " + std::string(_config->useOfflineFIDO ? "offline" : "online") + ", with mode " + _config->ModeString());
+	EDUMFADebug(
+		"FIDO2 Authentication " + std::string(_config->useOfflineFIDO ? "offline" : "online") + ", with mode "
+		+ _config->ModeString());
 	wstring username = _config->credential.username;
 	wstring domain = _config->credential.domain;
 
@@ -1854,7 +1879,8 @@ HRESULT CCredential::FIDOAuthentication(IQueryContinueWithStatus* pqcws)
 	else
 	{
 		EDUMFADebug("Getting FIDO2SignRequest from last response");
-		signRequest = _config->lastResponseWithChallenge ? _config->lastResponseWithChallenge->GetFIDOSignRequest() : std::nullopt;
+		signRequest = _config->lastResponseWithChallenge ? _config->lastResponseWithChallenge->GetFIDOSignRequest()
+														 : std::nullopt;
 	}
 
 	if (!signRequest)
@@ -1947,7 +1973,8 @@ HRESULT CCredential::FIDOAuthentication(IQueryContinueWithStatus* pqcws)
 		if (hr != FIDO_OK)
 		{
 			EDUMFADebug("Offline FIDO failed (Error " + to_string(hr) + "). Checking for Online fallback...");
-			const bool hasOnlineChallenge = (_config->lastResponseWithChallenge && _config->lastResponseWithChallenge->GetFIDOSignRequest())
+			const bool hasOnlineChallenge =
+				(_config->lastResponseWithChallenge && _config->lastResponseWithChallenge->GetFIDOSignRequest())
 				|| _passkeyChallenge.has_value();
 
 			if (hasOnlineChallenge)
@@ -1991,11 +2018,16 @@ HRESULT CCredential::FIDOAuthentication(IQueryContinueWithStatus* pqcws)
 
 	if (_config->usePasskey && _config->mode > Mode::SEC_KEY_ANY)
 	{
-		if (!_passkeyChallenge) { return E_FAIL; }
+		if (!_passkeyChallenge)
+		{
+			return E_FAIL;
+		}
 		hr = device.Sign(_passkeyChallenge.value(), origin, pin, signResponse);
 		processingOnline = true;
 	}
-	else if (_config->lastResponseWithChallenge && _config->lastResponseWithChallenge->GetFIDOSignRequest() && !_eduMFASuccess)
+	else if (
+		_config->lastResponseWithChallenge && _config->lastResponseWithChallenge->GetFIDOSignRequest()
+		&& !_eduMFASuccess)
 	{
 		EDUMFADebug("Trying online WebAuthn...");
 		hr = device.Sign(_config->lastResponseWithChallenge->GetFIDOSignRequest().value(), origin, pin, signResponse);
@@ -2027,7 +2059,11 @@ HRESULT CCredential::FIDOAuthentication(IQueryContinueWithStatus* pqcws)
 			bool missingNames = false;
 			for (const auto& a : signResponse.assertions)
 			{
-				if (a.username.empty()) { missingNames = true; break; }
+				if (a.username.empty())
+				{
+					missingNames = true;
+					break;
+				}
 			}
 
 			// If names are missing and we dont have a PIN yet, we MUST ask for it
@@ -2047,7 +2083,8 @@ HRESULT CCredential::FIDOAuthentication(IQueryContinueWithStatus* pqcws)
 			}
 
 			// Sort alphabetically by Display Name / Username
-			std::sort(signResponse.assertions.begin(), signResponse.assertions.end(),
+			std::sort(
+				signResponse.assertions.begin(), signResponse.assertions.end(),
 				[](const FIDOAssertionData& a, const FIDOAssertionData& b) {
 					// Compare Display Name if available, otherwise Username
 					std::string nameA = a.displayName.empty() ? a.username : a.displayName;
@@ -2058,9 +2095,8 @@ HRESULT CCredential::FIDOAuthentication(IQueryContinueWithStatus* pqcws)
 					std::wstring wNameB = Convert::ToWString(nameB);
 
 					// Locale-aware, case-insensitive comparison
-					return CompareStringW(LOCALE_USER_DEFAULT, NORM_IGNORECASE,
-						wNameA.c_str(), -1,
-						wNameB.c_str(), -1) == CSTR_LESS_THAN;
+					return CompareStringW(LOCALE_USER_DEFAULT, NORM_IGNORECASE, wNameA.c_str(), -1, wNameB.c_str(), -1)
+						   == CSTR_LESS_THAN;
 				});
 
 			_currentSignResponse = signResponse;
@@ -2081,7 +2117,8 @@ HRESULT CCredential::FIDOAuthentication(IQueryContinueWithStatus* pqcws)
 					if (label.empty()) label = "Unknown User";
 
 					// Add item to UI
-					_pCredProvCredentialEvents->AppendFieldComboBoxItem(this, FID_USER_SELECT, Convert::ToWString(label).c_str());
+					_pCredProvCredentialEvents->AppendFieldComboBoxItem(
+						this, FID_USER_SELECT, Convert::ToWString(label).c_str());
 				}
 
 				// Select the first item
@@ -2094,9 +2131,12 @@ HRESULT CCredential::FIDOAuthentication(IQueryContinueWithStatus* pqcws)
 		// Single user: Proceed automatically
 		EduMFAResponse response;
 		// Use correct transaction ID based on mode
-		std::string transId = _config->usePasskey ? _passkeyChallenge.value().transactionId : _config->lastTransactionId;
+		std::string transId =
+			_config->usePasskey ? _passkeyChallenge.value().transactionId : _config->lastTransactionId;
 
-		hr = _eduMFA.ValidateCheckFIDO(username, domain, signResponse.assertions[0], signResponse.clientdata, origin, response, transId, std::wstring());
+		hr = _eduMFA.ValidateCheckFIDO(
+			username, domain, signResponse.assertions[0], signResponse.clientdata, origin, response, transId,
+			std::wstring());
 
 		if (SUCCEEDED(hr))
 		{
@@ -2226,7 +2266,9 @@ HRESULT CCredential::FIDORegistration(IQueryContinueWithStatus* pqcws)
 	std::optional<FIDORegistrationResponse> response = std::nullopt;
 	try
 	{
-		response = dev->Register(_config->lastResponseWithChallenge->passkeyRegistration.value(), Convert::ToString(_config->credential.fido2PIN));
+		response = dev->Register(
+			_config->lastResponseWithChallenge->passkeyRegistration.value(),
+			Convert::ToString(_config->credential.fido2PIN));
 	}
 	catch (FIDOException ex)
 	{
@@ -2254,8 +2296,9 @@ HRESULT CCredential::FIDORegistration(IQueryContinueWithStatus* pqcws)
 	if (response)
 	{
 		EduMFAResponse piresponse;
-		hr = _eduMFA.ValidateCheckCompletePasskeyRegistration(request.transactionId, request.serial,
-			_config->credential.username, _config->credential.domain, response.value(), request.rpId, piresponse);
+		hr = _eduMFA.ValidateCheckCompletePasskeyRegistration(
+			request.transactionId, request.serial, _config->credential.username, _config->credential.domain,
+			response.value(), request.rpId, piresponse);
 
 		if (SUCCEEDED(hr) && piresponse.isAuthenticationSuccessful())
 		{
@@ -2324,7 +2367,8 @@ HRESULT CCredential::EvaluateResponse(EduMFAResponse& response)
 	if (response.IsPushAvailable())
 	{
 		// When polling finishes, pushAuthenticationCallback is invoked with the finalization success value
-		_eduMFA.PollTransactionAsync(username, domain, upn, response.transactionId,
+		_eduMFA.PollTransactionAsync(
+			username, domain, upn, response.transactionId,
 			std::bind(&CCredential::PushAuthenticationCallback, this, std::placeholders::_1));
 	}
 
@@ -2404,7 +2448,8 @@ std::optional<FIDODevice> CCredential::WaitForFIDODevice(IQueryContinueWithStatu
 	// to indicate what the user should do.
 	if (_config->provider.cpu == CPUS_CREDUI)
 	{
-		_pCredProvCredentialEvents->SetFieldString(this, FID_LARGE_TEXT, EDUMFATranslate(TEXT_FIDO_WAITING_FOR_DEVICE).c_str());
+		_pCredProvCredentialEvents->SetFieldString(
+			this, FID_LARGE_TEXT, EDUMFATranslate(TEXT_FIDO_WAITING_FOR_DEVICE).c_str());
 		_pCredProvCredentialEvents->SetFieldState(this, FID_LARGE_TEXT, CPFS_DISPLAY_IN_BOTH);
 		_pCredProvCredentialEvents->SetFieldInteractiveState(this, FID_PASSWORD, CPFIS_DISABLED);
 		_pCredProvCredentialEvents->SetFieldInteractiveState(this, FID_USERNAME, CPFIS_DISABLED);
@@ -2491,17 +2536,11 @@ HRESULT CCredential::Connect(__in IQueryContinueWithStatus* pqcws)
 			}
 
 			// Use the clientData from the container and the assertion data from the specific item
-		EduMFAResponse response;
+			EduMFAResponse response;
 			HRESULT hr = _eduMFA.ValidateCheckFIDO(
-				Convert::ToWString(assertion.username),
-				_config->credential.domain,
-				assertion,
-				_currentSignResponse.clientdata,
-				Convert::ToString(Utilities::ComputerName()),
-				response,
-				transactionId,
-				std::wstring()
-			);
+				Convert::ToWString(assertion.username), _config->credential.domain, assertion,
+				_currentSignResponse.clientdata, Convert::ToString(Utilities::ComputerName()), response, transactionId,
+				std::wstring());
 
 			if (SUCCEEDED(hr))
 			{
@@ -2575,7 +2614,6 @@ HRESULT CCredential::Connect(__in IQueryContinueWithStatus* pqcws)
 		isSendRequest = true;
 	}
 
-
 	// PRE-FLIGHT REFILL
 	// Validate offline credentials against the server before usage. Only of the current user or all if configured.
 	// Run this if we are about to use FIDO, OR if the configuration forces a global check
@@ -2641,7 +2679,9 @@ HRESULT CCredential::Connect(__in IQueryContinueWithStatus* pqcws)
 			hr = _eduMFA.OfflineCheck(username, passToSend, serialUsed);
 			// Check if a OfflineRefill should be attempted. Either if offlineThreshold is not set, remaining OTPs are below the threshold, or no more OTPs are available.
 			if ((hr == S_OK && _config->offlineTreshold == 0)
-				|| (hr == S_OK && _eduMFA.offlineHandler.GetOfflineOTPCount(Convert::ToString(username), serialUsed) < _config->offlineTreshold)
+				|| (hr == S_OK
+					&& _eduMFA.offlineHandler.GetOfflineOTPCount(Convert::ToString(username), serialUsed)
+						   < _config->offlineTreshold)
 				|| hr == EDUMFA_OFFLINE_DATA_NO_OTPS_LEFT)
 			{
 				pqcws->SetStatusMessage(EDUMFATranslate(TEXT_OFFLINE_REFILL).c_str());
@@ -2661,7 +2701,8 @@ HRESULT CCredential::Connect(__in IQueryContinueWithStatus* pqcws)
 
 		// FIDO Authentication
 		if (!_eduMFASuccess && _config->IsModeOneOf(Mode::SEC_KEY_NO_PIN, Mode::SEC_KEY_PIN, Mode::SEC_KEY_NO_DEVICE)
-			&& ((_config->lastResponseWithChallenge && !_config->lastResponseWithChallenge->passkeyRegistration) || _config->usePasskey || _config->useOfflineFIDO))
+			&& ((_config->lastResponseWithChallenge && !_config->lastResponseWithChallenge->passkeyRegistration)
+				|| _config->usePasskey || _config->useOfflineFIDO))
 		{
 			hr = FIDOAuthentication(pqcws);
 			if (FAILED(hr))
@@ -2670,7 +2711,10 @@ HRESULT CCredential::Connect(__in IQueryContinueWithStatus* pqcws)
 			}
 		}
 		// FIDO Registration
-		else if (!_eduMFASuccess && _config->IsModeOneOf(Mode::SEC_KEY_REG, Mode::SEC_KEY_REG_PIN, Mode::SEC_KEY_NO_DEVICE, Mode::SEC_KEY_SET_PIN)
+		else if (
+			!_eduMFASuccess
+			&& _config->IsModeOneOf(
+				Mode::SEC_KEY_REG, Mode::SEC_KEY_REG_PIN, Mode::SEC_KEY_NO_DEVICE, Mode::SEC_KEY_SET_PIN)
 			&& _config->lastResponseWithChallenge && _config->lastResponseWithChallenge->passkeyRegistration)
 		{
 			if (!_passkeyRegistrationFailed)
@@ -2724,12 +2768,14 @@ HBITMAP CCredential::CreateBitmapFromBase64PNG(const std::wstring& base64)
 {
 	std::vector<BYTE> binaryData;
 	DWORD binaryDataSize = 0;
-	if (!CryptStringToBinary(base64.c_str(), base64.size(), CRYPT_STRING_BASE64, nullptr, &binaryDataSize, nullptr, nullptr))
+	if (!CryptStringToBinary(
+			base64.c_str(), base64.size(), CRYPT_STRING_BASE64, nullptr, &binaryDataSize, nullptr, nullptr))
 	{
 		return nullptr;
 	}
 	binaryData.resize(binaryDataSize);
-	if (!CryptStringToBinary(base64.c_str(), base64.size(), CRYPT_STRING_BASE64, binaryData.data(), &binaryDataSize, nullptr, nullptr))
+	if (!CryptStringToBinary(
+			base64.c_str(), base64.size(), CRYPT_STRING_BASE64, binaryData.data(), &binaryDataSize, nullptr, nullptr))
 	{
 		return nullptr;
 	}
@@ -2767,11 +2813,11 @@ HRESULT CCredential::ReportResult(
 	__in NTSTATUS ntsStatus,
 	__in NTSTATUS ntsSubstatus,
 	__deref_out_opt PWSTR* ppwszOptionalStatusText,
-	__out CREDENTIAL_PROVIDER_STATUS_ICON* pcpsiOptionalStatusIcon
-)
+	__out CREDENTIAL_PROVIDER_STATUS_ICON* pcpsiOptionalStatusIcon)
 {
 	EDUMFADebug(__FUNCTION__);
-	EDUMFADebug("ntsStatus: " + Convert::LongToHexString(ntsStatus)
+	EDUMFADebug(
+		"ntsStatus: " + Convert::LongToHexString(ntsStatus)
 		+ ", ntsSubstatus: " + Convert::LongToHexString(ntsSubstatus));
 
 	UNREFERENCED_PARAMETER(ppwszOptionalStatusText);
@@ -2782,7 +2828,8 @@ HRESULT CCredential::ReportResult(
 	{
 		EDUMFADebug("ERROR: Password change failed with STATUS_USER_MAPPED_FILE_SYSTEM.");
 		EDUMFADebug("CAUSE: The user profile or registry hive is locked by another process.");
-		EDUMFADebug("SOLUTION: This is often caused by Fast User Switching or background services. A system reboot is required to clear the lock.");
+		EDUMFADebug(
+			"SOLUTION: This is often caused by Fast User Switching or background services. A system reboot is required to clear the lock.");
 
 		if (pcpsiOptionalStatusIcon)
 		{

@@ -29,7 +29,6 @@ constexpr auto LAST_USER_REGISTRY_PATH = L"SOFTWARE\\Microsoft\\Windows\\Current
 class RegistryReader
 {
 public:
-
 	RegistryReader(const std::wstring& pathToKey) noexcept;
 
 	std::wstring path;

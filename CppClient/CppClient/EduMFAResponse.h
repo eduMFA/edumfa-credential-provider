@@ -71,6 +71,6 @@ public:
 	int eduMFAVersionPatch = 99;
 	std::string eduMFAVersionSuffix = ""; // like dev0, beta1
 
-	bool isEnrollViaMultichallenge = false; // true if the response is a multichallenge response, e.g. for FIDO2 registration
-	bool isEnrollCancellable = false; // true if the enrollment can be cancelled by the user
+	bool isEnrollViaMultichallenge = false; // true for a multichallenge response, e.g. FIDO2 registration
+	bool isEnrollCancellable = false;       // true if the enrollment can be cancelled by the user
 };

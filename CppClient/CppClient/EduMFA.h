@@ -38,7 +38,7 @@ constexpr auto EDUMFA_ENDPOINT_POLLTRANSACTION = "/validate/polltransaction";
 constexpr auto EDUMFA_ENDPOINT_OFFLINE_REFILL = "/validate/offlinerefill";
 constexpr auto EDUMFA_ENDPOINT_VALIDATE_INITIALIZE = "/validate/initialize";
 
-#define EDUMFA_ERROR_WRONG_PARAMETER					((HRESULT)0x88809011)
+#define EDUMFA_ERROR_WRONG_PARAMETER ((HRESULT)0x88809011)
 
 constexpr auto EDUMFA_ERR_AUTH_FAILED = 0x88809099;
 
@@ -52,9 +52,7 @@ public:
 			config.offlineFilePath,
 			config.offlineTryWindow,
 			config.offlineExpirationDays,
-			config.offlineDeleteAfterDays
-		)
-	{};
+			config.offlineDeleteAfterDays) {};
 
 	~EduMFA();
 
@@ -123,7 +121,7 @@ public:
 	/// <param name="type"></param>
 	/// <param name="response"></param>
 	/// <returns></returns>
-	HRESULT ValidateInitialize(EduMFAResponse& response, const std::string & type = "passkey");
+	HRESULT ValidateInitialize(EduMFAResponse& response, const std::string& type = "passkey");
 
 	/// <summary>
 	/// Try to validate the given OTP value with the offline data for the user.
@@ -150,12 +148,16 @@ public:
 	// according to https://edumfa.readthedocs.io/en/latest/tokens/authentication_modes.html
 	// After that, the callback function is called with the result
 	//
-	void PollTransactionAsync(std::wstring username, std::wstring domain, std::wstring upn, std::string transactionId,
+	void PollTransactionAsync(
+		std::wstring username,
+		std::wstring domain,
+		std::wstring upn,
+		std::string transactionId,
 		std::function<void(const EduMFAResponse&)> callback);
 
 	//
 	// Poll for a transaction_id. If this returns success, the transaction must be finalized by calling validate/check with the username, transaction_id and an EMPTY pass parameter.
-  // https://edumfa.readthedocs.io/en/latest/tokens/authentication_modes.html
+	// https://edumfa.readthedocs.io/en/latest/tokens/authentication_modes.html
 	//
 	bool PollTransaction(std::string transactionId);
 
@@ -183,7 +185,11 @@ private:
 
 	HRESULT EvaluateResponse(std::string response, _Inout_ EduMFAResponse& responseObj);
 
-	void PollThread(const std::wstring& username, const std::wstring& domain, const std::wstring& upn, const std::string& transactionId,
+	void PollThread(
+		const std::wstring& username,
+		const std::wstring& domain,
+		const std::wstring& upn,
+		const std::string& transactionId,
 		std::function<void(const EduMFAResponse&)> callback);
 
 	Endpoint _endpoint;

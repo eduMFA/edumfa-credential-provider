@@ -59,15 +59,12 @@ void CProvider::_CleanupSetSerialization()
 {
 	EDUMFADebug(__FUNCTION__);
 
-
 	if (_pkiulSetSerialization)
 	{
 		KERB_INTERACTIVE_LOGON* pkil = &_pkiulSetSerialization->Logon;
-		SecureZeroMemory(_pkiulSetSerialization,
-			sizeof(*_pkiulSetSerialization) +
-			pkil->LogonDomainName.MaximumLength +
-			pkil->UserName.MaximumLength +
-			pkil->Password.MaximumLength);
+		SecureZeroMemory(
+			_pkiulSetSerialization, sizeof(*_pkiulSetSerialization) + pkil->LogonDomainName.MaximumLength
+										+ pkil->UserName.MaximumLength + pkil->Password.MaximumLength);
 		LocalFree(_pkiulSetSerialization);
 	}
 }
@@ -76,10 +73,7 @@ void CProvider::_CleanupSetSerialization()
 // in a subsequent call.
 //
 // This sample only handles the logon and unlock scenarios as those are the most common.
-HRESULT CProvider::SetUsageScenario(
-	__in CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus,
-	__in DWORD dwFlags
-)
+HRESULT CProvider::SetUsageScenario(__in CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus, __in DWORD dwFlags)
 {
 	EDUMFADebug(std::string(__FUNCTION__) + ": " + Shared::CPUStoString(cpus) + " - AUTHENTICATION START");
 	if (Logger::Get().logDebug)
@@ -100,7 +94,7 @@ HRESULT CProvider::SetUsageScenario(
 		{ CREDUIWIN_IN_CRED_ONLY, "CREDUIWIN_IN_CRED_ONLY" },
 		{ CREDUIWIN_ENUMERATE_ADMINS, "CREDUIWIN_ENUMERATE_ADMINS" },
 		{ CREDUIWIN_ENUMERATE_CURRENT_USER, "CREDUIWIN_ENUMERATE_CURRENT_USER" },
-		{ CREDUIWIN_PACK_32_WOW, "CREDUIWIN_PACK_32_WOW" }
+		{ CREDUIWIN_PACK_32_WOW, "CREDUIWIN_PACK_32_WOW" },
 	};
 	for (const auto& info : flagInfos)
 	{
@@ -117,18 +111,18 @@ HRESULT CProvider::SetUsageScenario(
 	// that we're not designed for that scenario.
 	switch (cpus)
 	{
-		case CPUS_LOGON:
-		case CPUS_UNLOCK_WORKSTATION:
-		case CPUS_CREDUI:
-			hr = S_OK;
-			break;
-		case CPUS_CHANGE_PASSWORD:
-		case CPUS_PLAP:
-		case CPUS_INVALID:
-			hr = E_NOTIMPL;
-			break;
-		default:
-			return E_INVALIDARG;
+	case CPUS_LOGON:
+	case CPUS_UNLOCK_WORKSTATION:
+	case CPUS_CREDUI:
+		hr = S_OK;
+		break;
+	case CPUS_CHANGE_PASSWORD:
+	case CPUS_PLAP:
+	case CPUS_INVALID:
+		hr = E_NOTIMPL;
+		break;
+	default:
+		return E_INVALIDARG;
 	}
 
 	if (hr == S_OK)
@@ -158,9 +152,7 @@ HRESULT CProvider::SetUsageScenario(
 //
 // Since this sample doesn't support CPUS_CREDUI, we have not implemented the credui specific
 // pieces of this function.  For information on that, please see the credUI sample.
-HRESULT CProvider::SetSerialization(
-	__in const CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION* pcpcs
-)
+HRESULT CProvider::SetSerialization(__in const CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION* pcpcs)
 {
 	EDUMFADebug(__FUNCTION__);
 	HRESULT hr = E_NOTIMPL;
@@ -175,7 +167,8 @@ HRESULT CProvider::SetSerialization(
 
 	if (_config->provider.cpu == CPUS_CREDUI)
 	{
-		if (((_config->provider.credPackFlags & CREDUIWIN_IN_CRED_ONLY) || (_config->provider.credPackFlags & CREDUIWIN_AUTHPACKAGE_ONLY))
+		if (((_config->provider.credPackFlags & CREDUIWIN_IN_CRED_ONLY)
+			 || (_config->provider.credPackFlags & CREDUIWIN_AUTHPACKAGE_ONLY))
 			&& authPackage != pcpcs->ulAuthenticationPackage)
 		{
 			EDUMFADebug("authPackage invalid");
@@ -200,10 +193,12 @@ HRESULT CProvider::SetSerialization(
 				DWORD nativeSerializationSize = 0;
 				EDUMFADebug("Serialization found from remote");
 
-				if (_config->provider.credPackFlags == CPUS_CREDUI && (_config->provider.credPackFlags & CREDUIWIN_PACK_32_WOW))
+				if (_config->provider.credPackFlags == CPUS_CREDUI
+					&& (_config->provider.credPackFlags & CREDUIWIN_PACK_32_WOW))
 				{
-					if (!SUCCEEDED(KerbInteractiveUnlockLogonRepackNative(pcpcs->rgbSerialization, pcpcs->cbSerialization,
-						&nativeSerialization, &nativeSerializationSize)))
+					if (!SUCCEEDED(KerbInteractiveUnlockLogonRepackNative(
+							pcpcs->rgbSerialization, pcpcs->cbSerialization, &nativeSerialization,
+							&nativeSerializationSize)))
 					{
 						return hr;
 					}
@@ -221,7 +216,8 @@ HRESULT CProvider::SetSerialization(
 					CopyMemory(nativeSerialization, pcpcs->rgbSerialization, pcpcs->cbSerialization);
 				}
 
-				KerbInteractiveUnlockLogonUnpackInPlace((KERB_INTERACTIVE_UNLOCK_LOGON*)nativeSerialization, nativeSerializationSize);
+				KerbInteractiveUnlockLogonUnpackInPlace(
+					(KERB_INTERACTIVE_UNLOCK_LOGON*)nativeSerialization, nativeSerializationSize);
 
 				if (_pkiulSetSerialization)
 				{
@@ -241,10 +237,7 @@ HRESULT CProvider::SetSerialization(
 
 // Called by LogonUI to give you a callback.  Providers often use the callback if they
 // some event would cause them to need to change the set of tiles that they enumerated
-HRESULT CProvider::Advise(
-	__in ICredentialProviderEvents* pcpe,
-	__in UINT_PTR upAdviseContext
-)
+HRESULT CProvider::Advise(__in ICredentialProviderEvents* pcpe, __in UINT_PTR upAdviseContext)
 {
 	EDUMFADebug(__FUNCTION__);
 
@@ -287,9 +280,7 @@ HRESULT CProvider::UnAdvise()
 // to have different fields from the other tiles you enumerate for a given usage
 // scenario you must include them all in this count and then hide/show them as desired
 // using the field descriptors.
-HRESULT CProvider::GetFieldDescriptorCount(
-	__out DWORD* pdwCount
-)
+HRESULT CProvider::GetFieldDescriptorCount(__out DWORD* pdwCount)
 {
 	EDUMFADebug(__FUNCTION__);
 
@@ -299,10 +290,7 @@ HRESULT CProvider::GetFieldDescriptorCount(
 }
 
 // Gets the field descriptor for a particular field
-HRESULT CProvider::GetFieldDescriptorAt(
-	__in DWORD dwIndex,
-	__deref_out CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR** ppcpfd
-)
+HRESULT CProvider::GetFieldDescriptorAt(__in DWORD dwIndex, __deref_out CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR** ppcpfd)
 {
 	//EDUMFADebugLn(__FUNCTION__);
 	HRESULT hr = E_FAIL;
@@ -318,31 +306,32 @@ HRESULT CProvider::GetFieldDescriptorAt(
 		std::wstring label = L"";
 		switch (dwIndex)
 		{
-			case FID_USERNAME:
-				label = EDUMFATranslate(TEXT_USERNAME);
-				break;
-			case FID_PASSWORD:
-				label = EDUMFATranslate(TEXT_PASSWORD);
-				break;
-			case FID_NEW_PASS_1:
-				label = EDUMFATranslate(TEXT_NEW_PASSWORD);
-				break;
-			case FID_NEW_PASS_2:
-				label = EDUMFATranslate(TEXT_CONFIRM_PASSWORD);
-				break;
-			case FID_OTP:
-				label = EDUMFATranslate(TEXT_OTP_FIELD);
-				break;
-			case FID_FIDO_PIN:
-				label = EDUMFATranslate(TEXT_FIDO_PIN_HINT);
-				break;
-			case FID_NEW_PIN_1:
-				label = EDUMFATranslate(TEXT_NEW_PIN_HINT);
-				break;
-			case FID_NEW_PIN_2:
-				label = EDUMFATranslate(TEXT_NEW_PIN_REPEAT_HINT);
-				break;
-			default: break;
+		case FID_USERNAME:
+			label = EDUMFATranslate(TEXT_USERNAME);
+			break;
+		case FID_PASSWORD:
+			label = EDUMFATranslate(TEXT_PASSWORD);
+			break;
+		case FID_NEW_PASS_1:
+			label = EDUMFATranslate(TEXT_NEW_PASSWORD);
+			break;
+		case FID_NEW_PASS_2:
+			label = EDUMFATranslate(TEXT_CONFIRM_PASSWORD);
+			break;
+		case FID_OTP:
+			label = EDUMFATranslate(TEXT_OTP_FIELD);
+			break;
+		case FID_FIDO_PIN:
+			label = EDUMFATranslate(TEXT_FIDO_PIN_HINT);
+			break;
+		case FID_NEW_PIN_1:
+			label = EDUMFATranslate(TEXT_NEW_PIN_HINT);
+			break;
+		case FID_NEW_PIN_2:
+			label = EDUMFATranslate(TEXT_NEW_PIN_REPEAT_HINT);
+			break;
+		default:
+			break;
 		}
 
 		if (!label.empty())
@@ -372,9 +361,8 @@ HRESULT CProvider::GetFieldDescriptorAt(
 // for authentication without showing any further UI.
 HRESULT CProvider::GetCredentialCount(
 	__out DWORD* pdwCount,
-	__out_range(< , *pdwCount) DWORD* pdwDefault,
-	__out BOOL* pbAutoLogonWithDefault
-)
+	__out_range(<, *pdwCount) DWORD* pdwDefault,
+	__out BOOL* pbAutoLogonWithDefault)
 {
 	EDUMFADebug(__FUNCTION__);
 
@@ -391,8 +379,7 @@ HRESULT CProvider::GetCredentialCount(
 	// except if CPUS is CREDUI, because in that case ReportResult will not be called i.e. on wrong password
 	// resulting in a loop if autoLogon was enabled
 	if (_SerializationAvailable(SERIALIZATION_AVAILABLE::FOR_USERNAME)
-		&& _SerializationAvailable(SERIALIZATION_AVAILABLE::FOR_PASSWORD)
-		&& _config->provider.cpu != CPUS_CREDUI)
+		&& _SerializationAvailable(SERIALIZATION_AVAILABLE::FOR_PASSWORD) && _config->provider.cpu != CPUS_CREDUI)
 	{
 		EDUMFADebug("Setting AutoLogon to true");
 		*pdwDefault = 0;
@@ -403,10 +390,7 @@ HRESULT CProvider::GetCredentialCount(
 
 // Returns the credential at the index specified by dwIndex. This function is called by logonUI to enumerate
 // the tiles.
-HRESULT CProvider::GetCredentialAt(
-	__in DWORD dwIndex,
-	__deref_out ICredentialProviderCredential** ppcpc
-)
+HRESULT CProvider::GetCredentialAt(__in DWORD dwIndex, __deref_out ICredentialProviderCredential** ppcpc)
 {
 	EDUMFADebug(__FUNCTION__);
 
@@ -428,11 +412,8 @@ HRESULT CProvider::GetCredentialAt(
 
 				DWORD dwLen = 0;
 
-				if (!WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE,
-					WTS_CURRENT_SESSION,
-					WTSUserName,
-					&serializedUser,
-					&dwLen))
+				if (!WTSQuerySessionInformation(
+						WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, WTSUserName, &serializedUser, &dwLen))
 				{
 					serializedUser = nullptr;
 				}
@@ -444,11 +425,8 @@ HRESULT CProvider::GetCredentialAt(
 
 				DWORD dwLen = 0;
 
-				if (!WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE,
-					WTS_CURRENT_SESSION,
-					WTSDomainName,
-					&serializedDomain,
-					&dwLen))
+				if (!WTSQuerySessionInformation(
+						WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, WTSDomainName, &serializedDomain, &dwLen))
 				{
 					serializedDomain = nullptr;
 				}
@@ -485,9 +463,7 @@ HRESULT CProvider::GetCredentialAt(
 		}
 
 		hr = tempCredential->Initialize(
-			s_rgScenarioCredProvFieldDescriptors,
-			pfsp,
-			serializedUser, serializedDomain, serializedPass);
+			s_rgScenarioCredProvFieldDescriptors, pfsp, serializedUser, serializedDomain, serializedPass);
 
 		// Only cache fully initialized credentials so a failed attempt is retried on the next call
 		if (SUCCEEDED(hr))
@@ -559,8 +535,11 @@ void CProvider::_GetSerializedCredentials(PWSTR* username, PWSTR* password, PWST
 	{
 		if (_SerializationAvailable(SERIALIZATION_AVAILABLE::FOR_USERNAME))
 		{
-			*username = (PWSTR)LocalAlloc(LMEM_ZEROINIT, _pkiulSetSerialization->Logon.UserName.Length + sizeof(wchar_t));
-			CopyMemory(*username, _pkiulSetSerialization->Logon.UserName.Buffer, _pkiulSetSerialization->Logon.UserName.Length);
+			*username =
+				(PWSTR)LocalAlloc(LMEM_ZEROINIT, _pkiulSetSerialization->Logon.UserName.Length + sizeof(wchar_t));
+			CopyMemory(
+				*username, _pkiulSetSerialization->Logon.UserName.Buffer,
+				_pkiulSetSerialization->Logon.UserName.Length);
 		}
 		else
 		{
@@ -572,8 +551,11 @@ void CProvider::_GetSerializedCredentials(PWSTR* username, PWSTR* password, PWST
 	{
 		if (_SerializationAvailable(SERIALIZATION_AVAILABLE::FOR_PASSWORD))
 		{
-			*password = (PWSTR)LocalAlloc(LMEM_ZEROINIT, _pkiulSetSerialization->Logon.Password.Length + sizeof(wchar_t));
-			CopyMemory(*password, _pkiulSetSerialization->Logon.Password.Buffer, _pkiulSetSerialization->Logon.Password.Length);
+			*password =
+				(PWSTR)LocalAlloc(LMEM_ZEROINIT, _pkiulSetSerialization->Logon.Password.Length + sizeof(wchar_t));
+			CopyMemory(
+				*password, _pkiulSetSerialization->Logon.Password.Buffer,
+				_pkiulSetSerialization->Logon.Password.Length);
 		}
 		else
 		{
@@ -585,8 +567,11 @@ void CProvider::_GetSerializedCredentials(PWSTR* username, PWSTR* password, PWST
 	{
 		if (_SerializationAvailable(SERIALIZATION_AVAILABLE::FOR_DOMAIN))
 		{
-			*domain = (PWSTR)LocalAlloc(LMEM_ZEROINIT, _pkiulSetSerialization->Logon.LogonDomainName.Length + sizeof(wchar_t));
-			CopyMemory(*domain, _pkiulSetSerialization->Logon.LogonDomainName.Buffer, _pkiulSetSerialization->Logon.LogonDomainName.Length);
+			*domain = (PWSTR)LocalAlloc(
+				LMEM_ZEROINIT, _pkiulSetSerialization->Logon.LogonDomainName.Length + sizeof(wchar_t));
+			CopyMemory(
+				*domain, _pkiulSetSerialization->Logon.LogonDomainName.Buffer,
+				_pkiulSetSerialization->Logon.LogonDomainName.Length);
 		}
 		else
 		{
@@ -609,15 +594,16 @@ bool CProvider::_SerializationAvailable(SERIALIZATION_AVAILABLE checkFor)
 	{
 		switch (checkFor)
 		{
-			case SERIALIZATION_AVAILABLE::FOR_USERNAME:
-				result = _pkiulSetSerialization->Logon.UserName.Length && _pkiulSetSerialization->Logon.UserName.Buffer;
-				break;
-			case SERIALIZATION_AVAILABLE::FOR_PASSWORD:
-				result = _pkiulSetSerialization->Logon.Password.Length && _pkiulSetSerialization->Logon.Password.Buffer;
-				break;
-			case SERIALIZATION_AVAILABLE::FOR_DOMAIN:
-				result = _pkiulSetSerialization->Logon.LogonDomainName.Length && _pkiulSetSerialization->Logon.LogonDomainName.Buffer;
-				break;
+		case SERIALIZATION_AVAILABLE::FOR_USERNAME:
+			result = _pkiulSetSerialization->Logon.UserName.Length && _pkiulSetSerialization->Logon.UserName.Buffer;
+			break;
+		case SERIALIZATION_AVAILABLE::FOR_PASSWORD:
+			result = _pkiulSetSerialization->Logon.Password.Length && _pkiulSetSerialization->Logon.Password.Buffer;
+			break;
+		case SERIALIZATION_AVAILABLE::FOR_DOMAIN:
+			result = _pkiulSetSerialization->Logon.LogonDomainName.Length
+					 && _pkiulSetSerialization->Logon.LogonDomainName.Buffer;
+			break;
 		}
 	}
 

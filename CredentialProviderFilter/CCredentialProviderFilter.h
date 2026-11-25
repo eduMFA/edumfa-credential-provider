@@ -28,61 +28,60 @@
 
 class CCredentialProviderFilter : public ICredentialProviderFilter
 {
-	public:
+public:
 	//This section contains some COM boilerplate code
 
 	// IUnknown
-	STDMETHOD_(ULONG, AddRef)()
-	{
-	return _cRef++;
-	}
+	STDMETHOD_(ULONG, AddRef)() { return _cRef++; }
 
 	STDMETHOD_(ULONG, Release)()
 	{
-	LONG cRef = _cRef--;
-	if (!cRef)
-	{
-	delete this;
-	}
-	return cRef;
+		LONG cRef = _cRef--;
+		if (!cRef)
+		{
+			delete this;
+		}
+		return cRef;
 	}
 
-	STDMETHOD (QueryInterface)(REFIID riid, void** ppv)
+	STDMETHOD(QueryInterface)(REFIID riid, void** ppv)
 	{
-	HRESULT hr;
-	if (IID_IUnknown == riid || IID_ICredentialProviderFilter == riid)
-	{
-		*ppv = this;
-		reinterpret_cast<IUnknown*>(*ppv)->AddRef();
-		hr = S_OK;
-	}
-	else
-	{
-		*ppv = NULL;
-		hr = E_NOINTERFACE;
-	}
-	return hr;
+		HRESULT hr;
+		if (IID_IUnknown == riid || IID_ICredentialProviderFilter == riid)
+		{
+			*ppv = this;
+			reinterpret_cast<IUnknown*>(*ppv)->AddRef();
+			hr = S_OK;
+		}
+		else
+		{
+			*ppv = NULL;
+			hr = E_NOINTERFACE;
+		}
+		return hr;
 	}
 	//#pragma warning(disable:4100)
 
-	public:
+public:
 	//Implementation of ICredentialProviderFilter
-	IFACEMETHODIMP Filter(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus,
-						  DWORD dwFlags,
-						  GUID* rgclsidProviders,
-						  BOOL* rgbAllow,
-						  DWORD cProviders);
+	IFACEMETHODIMP Filter(
+		CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus,
+		DWORD dwFlags,
+		GUID* rgclsidProviders,
+		BOOL* rgbAllow,
+		DWORD cProviders);
 
-	IFACEMETHODIMP UpdateRemoteCredential(const CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION *pcpcsIn,
-										  CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION *pcpcsOut);
+	IFACEMETHODIMP UpdateRemoteCredential(
+		const CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION* pcpcsIn,
+		CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION* pcpcsOut);
 
 	friend HRESULT CSample_CreateInstance(__in REFIID riid, __deref_out void** ppv);
 
-	protected:
+protected:
 	CCredentialProviderFilter();
 	__override ~CCredentialProviderFilter();
 
-	private:
+private:
 	LONG _cRef;
 
 private:

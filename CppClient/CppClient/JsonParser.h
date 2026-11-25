@@ -24,7 +24,7 @@
 #include <vector>
 #include <winerror.h>
 
-#define EDUMFA_JSON_PARSE_ERROR							((HRESULT)0x88809031)
+#define EDUMFA_JSON_PARSE_ERROR ((HRESULT)0x88809031)
 constexpr auto JSON_DUMP_INDENTATION = 4;
 
 class JsonParser
@@ -39,7 +39,7 @@ public:
 	/// S_OK success,
 	/// EDUMFA_JSON_PARSE_ERROR if the input is malformed or a required field is missing
 	/// </returns>
-	HRESULT ParseResponse(std::string serverResponse, EduMFAResponse &response);
+	HRESULT ParseResponse(std::string serverResponse, EduMFAResponse& response);
 
 	/// <summary>
 	///
@@ -64,7 +64,6 @@ public:
 	HRESULT ParseRefillResponse(const std::string& in, const std::string& username, OfflineData& data);
 
 	std::string GetRefilltoken(std::string input);
-
 
 	// Return the input json with indentation of 4. If the input is not a valid json it is returned as is.
 	static std::string PrettyFormatJson(std::string input);

@@ -152,9 +152,8 @@ HRESULT EduMFA::ValidateCheck(
 	EDUMFADebug(__FUNCTION__);
 	string strOTP = Convert::ToString(otp);
 
-	map<string, string> parameters =
-	{
-		{ "pass", strOTP }
+	map<string, string> parameters = {
+		{ "pass", strOTP },
 	};
 
 	// Username+Domain/Realm or just UPN
@@ -198,7 +197,9 @@ std::string EduMFA::SendRequestWithFallback(
 	// Just check for hostname since path and port are optional
 	if (response.empty() && !_config.fallbackHostname.empty() && _endpoint.hostname != _config.fallbackHostname)
 	{
-		EDUMFAError(L"Primary host failed to respond, switching to fallback host: " + _config.fallbackHostname + L" for the rest of the authentication.");
+		EDUMFAError(
+			L"Primary host failed to respond, switching to fallback host: " + _config.fallbackHostname
+			+ L" for the rest of the authentication.");
 		_endpoint.hostname = _config.fallbackHostname;
 		_endpoint.path = _config.fallbackPath;
 		_endpoint.port = _config.fallbackPort;
@@ -279,15 +280,15 @@ HRESULT EduMFA::ValidateCheckCompletePasskeyRegistration(
 	EduMFAResponse& piresponse)
 {
 	map<string, string> parameters = {
-		{"user", Convert::ToString(username)},
-		{"serial", serial},
-		{"type", "passkey"},
-		{"transaction_id", transactionId},
-		{"credential_id", registrationResponse.credentialId},
-		{"clientDataJSON", registrationResponse.clientDataJSON},
-		{"attestationObject", registrationResponse.attestationObject},
-		{"authenticatorAttachment", registrationResponse.authenticatorAttachment},
-		{"rawId", registrationResponse.credentialId}
+		{ "user", Convert::ToString(username) },
+		{ "serial", serial },
+		{ "type", "passkey" },
+		{ "transaction_id", transactionId },
+		{ "credential_id", registrationResponse.credentialId },
+		{ "clientDataJSON", registrationResponse.clientDataJSON },
+		{ "attestationObject", registrationResponse.attestationObject },
+		{ "authenticatorAttachment", registrationResponse.authenticatorAttachment },
+		{ "rawId", registrationResponse.credentialId },
 	};
 	AppendRealm(domain, parameters);
 	map<string, string> headers = { { "Origin", origin } };
@@ -334,12 +335,13 @@ HRESULT EduMFA::OfflineRefill(const std::wstring& username, const std::wstring& 
 	}
 
 	map<string, string> parameters = {
-		{"pass", szLastOTP},
-		{"refilltoken", refilltoken},
-		{"serial", serial}
+		{ "pass", szLastOTP },
+		{ "refilltoken", refilltoken },
+		{ "serial", serial },
 	};
 
-	string response = SendRequestWithFallback(EDUMFA_ENDPOINT_OFFLINE_REFILL, parameters, map<string, string>(), RequestMethod::POST);
+	string response =
+		SendRequestWithFallback(EDUMFA_ENDPOINT_OFFLINE_REFILL, parameters, map<string, string>(), RequestMethod::POST);
 
 	if (response.empty())
 	{
@@ -380,12 +382,13 @@ HRESULT EduMFA::OfflineRefillFIDO(const std::wstring& username, const std::strin
 	}
 
 	map<string, string> parameters = {
-		{"refilltoken", refilltoken},
-		{"serial", serial},
-		{"pass", ""}
+		{ "refilltoken", refilltoken },
+		{ "serial", serial },
+		{ "pass", "" },
 	};
 
-	string response = SendRequestWithFallback(EDUMFA_ENDPOINT_OFFLINE_REFILL, parameters, map<string, string>(), RequestMethod::POST);
+	string response =
+		SendRequestWithFallback(EDUMFA_ENDPOINT_OFFLINE_REFILL, parameters, map<string, string>(), RequestMethod::POST);
 
 	if (response.empty())
 	{
@@ -395,7 +398,8 @@ HRESULT EduMFA::OfflineRefillFIDO(const std::wstring& username, const std::strin
 
 	if (!_parser.IsStillActiveOfflineToken(response))
 	{
-		EDUMFADebug("Token " + serial + " is not marked for offline use anymore, its data is removed from this machine");
+		EDUMFADebug(
+			"Token " + serial + " is not marked for offline use anymore, its data is removed from this machine");
 		offlineHandler.RemoveOfflineData(szUsername, serial);
 	}
 	else
@@ -420,7 +424,8 @@ bool EduMFA::StopPoll()
 {
 	EDUMFADebug("Stopping poll thread...");
 	_runPoll.store(false);
-	if (_workerThread.joinable()) {
+	if (_workerThread.joinable())
+	{
 		_workerThread.join();
 	}
 	return true;
@@ -441,10 +446,11 @@ void EduMFA::PollTransactionAsync(
 bool EduMFA::PollTransaction(std::string transactionId)
 {
 	map<string, string> parameters = {
-		{"transaction_id", transactionId }
+		{ "transaction_id", transactionId },
 	};
 
-	string response = SendRequestWithFallback(EDUMFA_ENDPOINT_POLLTRANSACTION, parameters, map<string, string>(), RequestMethod::GET);
+	string response =
+		SendRequestWithFallback(EDUMFA_ENDPOINT_POLLTRANSACTION, parameters, map<string, string>(), RequestMethod::GET);
 	EDUMFADebug("Polltransaction response: " + response);
 	return _parser.ParsePollTransaction(response);
 }
@@ -452,10 +458,11 @@ bool EduMFA::PollTransaction(std::string transactionId)
 bool EduMFA::CancelEnrollmentViaMultichallenge(std::string transactionId)
 {
 	map<string, string> parameters = {
-		{"transaction_id", transactionId },
-		{"cancel_enrollment", "true"}
+		{ "transaction_id", transactionId },
+		{ "cancel_enrollment", "true" },
 	};
-	string response = SendRequestWithFallback(EDUMFA_ENDPOINT_VALIDATE_CHECK, parameters, map<string, string>(), RequestMethod::POST);
+	string response =
+		SendRequestWithFallback(EDUMFA_ENDPOINT_VALIDATE_CHECK, parameters, map<string, string>(), RequestMethod::POST);
 	EDUMFADebug("Cancel enrollment response: " + response);
 	EduMFAResponse pir;
 	HRESULT hr = _parser.ParseResponse(response, pir);
@@ -465,7 +472,6 @@ bool EduMFA::CancelEnrollmentViaMultichallenge(std::string transactionId)
 	}
 	return false;
 }
-
 
 bool EduMFA::OfflineFIDODataExistsFor(std::wstring username)
 {

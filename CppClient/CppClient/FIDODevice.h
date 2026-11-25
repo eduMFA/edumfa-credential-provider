@@ -81,6 +81,7 @@ public:
 	bool libfidoDebug = false; // Enable libfido2 debug logging which will be redirected to EDUMFADebug
 
 	std::string GetFirmwareVersionString() const;
+
 private:
 	int GetDeviceInfo();
 

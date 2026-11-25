@@ -5,8 +5,7 @@
 #include <shared_mutex>
 #include <mutex>
 
-#define EDUMFATranslate(messageId)				Translator::GetInstance().Translate(messageId)
-
+#define EDUMFATranslate(messageId) Translator::GetInstance().Translate(messageId)
 
 // Text IDs
 constexpr auto TEXT_USERNAME = 0;
@@ -67,38 +66,40 @@ constexpr auto TEXT_USER_PROFILE_LOCKED_RESTART_REQUIRED = 46;
 // The method Translate(textId), returns the wstring corresponding to the id in the current language.
 //
 
-class Translator final {
+class Translator final
+{
 public:
-    Translator(const Translator&) = delete;
-    void operator=(const Translator&) = delete;
+	Translator(const Translator&) = delete;
+	void operator=(const Translator&) = delete;
 
-    Translator(Translator&&) noexcept = delete;
-    Translator& operator=(Translator&&) noexcept = delete;
+	Translator(Translator&&) noexcept = delete;
+	Translator& operator=(Translator&&) noexcept = delete;
 
-    ~Translator() = default;
+	~Translator() = default;
 
-    static Translator& GetInstance() {
-        static Translator instance;
-        return instance;
-    }
+	static Translator& GetInstance()
+	{
+		static Translator instance;
+		return instance;
+	}
 
-    void SetLanguage(const std::string& language);
-    std::wstring Translate(int textId); // Translate the textId to the corresponding current language
-    std::string GetLanguage(); // Returns current language
-    std::string GetRegion();   // Returns current region
-    std::string GetUserLocale();
+	void SetLanguage(const std::string& language);
+	std::wstring Translate(int textId); // Translate the textId to the corresponding current language
+	std::string GetLanguage();          // Returns current language
+	std::string GetRegion();            // Returns current region
+	std::string GetUserLocale();
 
 private:
-    Translator();
-    static std::shared_mutex _mutex;
-    static std::unordered_map<int, std::wstring> _translations;
-    static std::string _currentLanguage;
-    static std::string _currentRegion;
-    static std::wstring _localesPath;
+	Translator();
+	static std::shared_mutex _mutex;
+	static std::unordered_map<int, std::wstring> _translations;
+	static std::string _currentLanguage;
+	static std::string _currentRegion;
+	static std::wstring _localesPath;
 
-    bool TryLoadTranslations(const std::string& language, const std::string& region = "");
-    bool LoadTranslations(const std::string& locale);
+	bool TryLoadTranslations(const std::string& language, const std::string& region = "");
+	bool LoadTranslations(const std::string& locale);
 
-    std::string GetLanguageFromLocale(const std::string& locale);
-    std::string GetRegionFromLocale(const std::string& locale);
+	std::string GetLanguageFromLocale(const std::string& locale);
+	std::string GetRegionFromLocale(const std::string& locale);
 };

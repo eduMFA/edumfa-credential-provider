@@ -24,7 +24,8 @@
 #include "Mode.h"
 #include <credentialprovider.h>
 
-struct WindowsInfo {
+struct WindowsInfo
+{
 	DWORD major;
 	DWORD minor;
 	DWORD build;
@@ -59,32 +60,44 @@ public:
 
 	EduMFAConfig piconfig;
 
-	template<typename... Modes>
-	bool IsModeOneOf(Modes... modes) const noexcept
-	{
-		return ((mode == modes) || ...);
-	}
+	template <typename... Modes> bool IsModeOneOf(Modes... modes) const noexcept { return ((mode == modes) || ...); }
 
 	inline std::string ModeToString(Mode m)
 	{
 		switch (m)
 		{
-		case Mode::NO_CHANGE:						return "NO_CHANGE";
-		case Mode::CHANGE_PASSWORD:					return "CHANGE_PASSWORD";
-		case Mode::USERNAME:						return "USERNAME";
-		case Mode::PASSWORD:						return "PASSWORD";
-		case Mode::USERNAMEPASSWORD:				return "USERNAMEPASSWORD";
-		case Mode::EDUMFA:							return "EDUMFA";
-		case Mode::SEC_KEY_ANY:						return "SEC_KEY_ANY";
-		case Mode::PASSKEY:							return "PASSKEY";
-		case Mode::SEC_KEY_REG:						return "SEC_KEY_REG";
-		case Mode::SEC_KEY_REG_PIN:					return "SEC_KEY_REG_PIN";
-		case Mode::SEC_KEY_PIN:						return "SEC_KEY_PIN";
-		case Mode::SEC_KEY_NO_PIN:					return "SEC_KEY_NO_PIN";
-		case Mode::SEC_KEY_NO_DEVICE:				return "SEC_KEY_NO_DEVICE";
-		case Mode::SEC_KEY_SET_PIN:					return "SEC_KEY_SET_PIN";
-		case Mode::SEC_KEY_SELECT_USER:				return "SEC_KEY_SELECT_USER";
-		default:									return "UNKNOWN_MODE";
+		case Mode::NO_CHANGE:
+			return "NO_CHANGE";
+		case Mode::CHANGE_PASSWORD:
+			return "CHANGE_PASSWORD";
+		case Mode::USERNAME:
+			return "USERNAME";
+		case Mode::PASSWORD:
+			return "PASSWORD";
+		case Mode::USERNAMEPASSWORD:
+			return "USERNAMEPASSWORD";
+		case Mode::EDUMFA:
+			return "EDUMFA";
+		case Mode::SEC_KEY_ANY:
+			return "SEC_KEY_ANY";
+		case Mode::PASSKEY:
+			return "PASSKEY";
+		case Mode::SEC_KEY_REG:
+			return "SEC_KEY_REG";
+		case Mode::SEC_KEY_REG_PIN:
+			return "SEC_KEY_REG_PIN";
+		case Mode::SEC_KEY_PIN:
+			return "SEC_KEY_PIN";
+		case Mode::SEC_KEY_NO_PIN:
+			return "SEC_KEY_NO_PIN";
+		case Mode::SEC_KEY_NO_DEVICE:
+			return "SEC_KEY_NO_DEVICE";
+		case Mode::SEC_KEY_SET_PIN:
+			return "SEC_KEY_SET_PIN";
+		case Mode::SEC_KEY_SELECT_USER:
+			return "SEC_KEY_SELECT_USER";
+		default:
+			return "UNKNOWN_MODE";
 		}
 	}
 
@@ -93,15 +106,9 @@ public:
 		return !credential.username.empty() && !credential.password.empty() && !credential.domain.empty();
 	}
 
-	inline std::string ModeString()
-	{
-		return ModeToString(mode);
-	}
+	inline std::string ModeString() { return ModeToString(mode); }
 
-	bool IsPasswordInFirstStep() const noexcept
-	{
-		return twoStepSendPassword || usernamePassword;
-	}
+	bool IsPasswordInFirstStep() const noexcept { return twoStepSendPassword || usernamePassword; }
 
 	bool IsAutoLogonConfigured() const noexcept
 	{
@@ -123,8 +130,8 @@ public:
 	}
 
 	// FIDO2
-	bool usePasskey = false;		// Online
-	bool useOfflineFIDO = false;	// Offline
+	bool usePasskey = false;     // Online
+	bool useOfflineFIDO = false; // Offline
 	bool disablePasskey = false;
 	bool passkeyFirstStep = false;
 

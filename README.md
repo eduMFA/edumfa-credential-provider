@@ -47,6 +47,14 @@ This performs the same steps the CI workflow uses:
 pwsh ./scripts/setup-dependencies.ps1
 ```
 
+### Formatting
+
+CI checks the C++ sources against ``.clang-format`` with clang-format 21. To format everything:
+
+```
+git ls-files '*.cpp' '*.h' | xargs clang-format -i
+```
+
 ### Code signing policy
 
 Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by

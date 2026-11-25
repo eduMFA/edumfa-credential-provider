@@ -35,9 +35,9 @@
 #include <map>
 #include <optional>
 
-#define NOT_EMPTY(NAME) (NAME != NULL && NAME[0] != NULL)
+#define NOT_EMPTY(NAME) ((NAME) != NULL && (NAME)[0] != NULL)
 
-#define ZERO(NAME) SecureZeroMemory(NAME, sizeof(NAME))
+#define ZERO(NAME) SecureZeroMemory(static_cast<void*>(NAME), sizeof(NAME))
 
 class CCredential : public IConnectableCredentialProviderCredential
 {

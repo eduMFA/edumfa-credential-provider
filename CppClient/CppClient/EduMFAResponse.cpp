@@ -34,15 +34,8 @@ bool EduMFAResponse::IsPushAvailable()
 
 bool EduMFAResponse::isAuthenticationSuccessful() const
 {
-	if (authenticationStatus == AuthenticationStatus::ACCEPT)
-	{
-		return true;
-	}
-	else if (authenticationStatus == AuthenticationStatus::NOT_SET && challenges.empty() && value)
-	{
-		return true;
-	}
-	return false;
+	return authenticationStatus == AuthenticationStatus::ACCEPT
+		   || (authenticationStatus == AuthenticationStatus::NOT_SET && challenges.empty() && value);
 }
 
 std::string EduMFAResponse::GetPushMessage()

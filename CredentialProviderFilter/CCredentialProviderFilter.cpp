@@ -52,6 +52,7 @@ HRESULT CSample_CreateInstance(__in REFIID riid, __deref_out void** ppv)
 		hr = E_OUTOFMEMORY;
 	}
 
+	// NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks): COM, Release() deletes it with the last reference
 	return hr;
 }
 

@@ -333,7 +333,7 @@ HRESULT CCredential::SetSelected(__out BOOL* pbAutoLogon)
 		RegistryReader rr(LAST_USER_REGISTRY_PATH);
 		wstring wszEntry = rr.GetWString(L"LastLoggedOnUser");
 		wstring wszLastUser = wszEntry.substr(wszEntry.find(L"\\") + 1, wszEntry.length() - 1);
-		hr = _pCredProvCredentialEvents->SetFieldString(this, FID_USERNAME, wszLastUser.c_str());
+		_pCredProvCredentialEvents->SetFieldString(this, FID_USERNAME, wszLastUser.c_str());
 		hr = _pCredProvCredentialEvents->SetFieldInteractiveState(this, FID_PASSWORD, CPFIS_FOCUSED);
 	}
 
@@ -360,9 +360,9 @@ HRESULT CCredential::SetDeselected()
 
 	HRESULT hr = S_OK;
 
-	hr = _util.Clear(
+	_util.Clear(
 		_rgFieldStrings, _rgCredProvFieldDescriptors, this, _pCredProvCredentialEvents, CLEAR_FIELDS_EDIT_AND_CRYPT);
-	hr = SetOfflineInfo("");
+	SetOfflineInfo("");
 	hr = ResetMode();
 	_config->credential.domain = L"";
 	_config->credential.username = L"";
@@ -653,10 +653,13 @@ Mode CCredential::SelectFIDOMode(std::string userVerification, bool offline)
 	if (userVerification.empty())
 	{
 		// WebAuthn / Passkey triggered by PIN, challenge is in last response
-		if (_config->lastResponseWithChallenge && _config->lastResponseWithChallenge->GetFIDOSignRequest())
+		const auto signRequest = _config->lastResponseWithChallenge
+									 ? _config->lastResponseWithChallenge->GetFIDOSignRequest()
+									 : std::nullopt;
+		if (signRequest)
 		{
 			offline = false;
-			uvDiscouraged = _config->lastResponseWithChallenge->GetFIDOSignRequest()->userVerification == "discouraged";
+			uvDiscouraged = signRequest->userVerification == "discouraged";
 		}
 		// Passkey standard, challenge is in _passkeyChallenge
 		else if (_passkeyChallenge.has_value())
@@ -1509,15 +1512,16 @@ HRESULT CCredential::GetSerialization(
 						SetMode(Mode::EDUMFA);
 						break;
 
-					case FIDO_ERR_PIN_AUTH_BLOCKED:
+					case FIDO_ERR_PIN_AUTH_BLOCKED: {
 						errorMessage = EDUMFATranslate(TEXT_FIDO_ERR_PIN_BLOCKED);
 						// If UV is discouraged, we must reset to avoid infinite loop
-						if (lastResponse && lastResponse->GetFIDOSignRequest()
-							&& lastResponse->GetFIDOSignRequest()->userVerification == "discouraged")
+						const auto signRequest = lastResponse ? lastResponse->GetFIDOSignRequest() : std::nullopt;
+						if (signRequest && signRequest->userVerification == "discouraged")
 						{
 							resetToFirstStep = true;
 						}
 						break;
+					}
 
 					case FIDO_DEVICE_ERR_TX:
 						errorMessage = EDUMFATranslate(TEXT_FIDO_ERR_TX);
@@ -2025,12 +2029,13 @@ HRESULT CCredential::FIDOAuthentication(IQueryContinueWithStatus* pqcws)
 		hr = device.Sign(_passkeyChallenge.value(), origin, pin, signResponse);
 		processingOnline = true;
 	}
-	else if (
-		_config->lastResponseWithChallenge && _config->lastResponseWithChallenge->GetFIDOSignRequest()
-		&& !_eduMFASuccess)
+	else if (const auto signRequest = _config->lastResponseWithChallenge
+										  ? _config->lastResponseWithChallenge->GetFIDOSignRequest()
+										  : std::nullopt;
+			 signRequest && !_eduMFASuccess)
 	{
 		EDUMFADebug("Trying online WebAuthn...");
-		hr = device.Sign(_config->lastResponseWithChallenge->GetFIDOSignRequest().value(), origin, pin, signResponse);
+		hr = device.Sign(*signRequest, origin, pin, signResponse);
 		processingOnline = true;
 	}
 
@@ -2087,8 +2092,10 @@ HRESULT CCredential::FIDOAuthentication(IQueryContinueWithStatus* pqcws)
 				signResponse.assertions.begin(), signResponse.assertions.end(),
 				[](const FIDOAssertionData& a, const FIDOAssertionData& b) {
 					// Compare Display Name if available, otherwise Username
+					// NOLINTBEGIN(clang-analyzer-cplusplus.Move): false positive from inside std::sort
 					std::string nameA = a.displayName.empty() ? a.username : a.displayName;
 					std::string nameB = b.displayName.empty() ? b.username : b.displayName;
+					// NOLINTEND(clang-analyzer-cplusplus.Move)
 
 					// Convert UTF-8 payload to UTF-16 wide strings for safe Unicode comparison
 					std::wstring wNameA = Convert::ToWString(nameA);
@@ -2132,7 +2139,7 @@ HRESULT CCredential::FIDOAuthentication(IQueryContinueWithStatus* pqcws)
 		EduMFAResponse response;
 		// Use correct transaction ID based on mode
 		std::string transId =
-			_config->usePasskey ? _passkeyChallenge.value().transactionId : _config->lastTransactionId;
+			_config->usePasskey && _passkeyChallenge ? _passkeyChallenge->transactionId : _config->lastTransactionId;
 
 		hr = _eduMFA.ValidateCheckFIDO(
 			username, domain, signResponse.assertions[0], signResponse.clientdata, origin, response, transId,
@@ -2170,7 +2177,7 @@ HRESULT CCredential::FIDORegistration(IQueryContinueWithStatus* pqcws)
 		return E_POINTER;
 	}
 
-	if (_config->lastResponseWithChallenge && !_config->lastResponseWithChallenge->passkeyRegistration)
+	if (!_config->lastResponseWithChallenge || !_config->lastResponseWithChallenge->passkeyRegistration)
 	{
 		EDUMFAError("No passkey registration available, cannot continue with registration");
 		return E_FAIL;
@@ -2266,25 +2273,15 @@ HRESULT CCredential::FIDORegistration(IQueryContinueWithStatus* pqcws)
 	std::optional<FIDORegistrationResponse> response = std::nullopt;
 	try
 	{
-		response = dev->Register(
-			_config->lastResponseWithChallenge->passkeyRegistration.value(),
-			Convert::ToString(_config->credential.fido2PIN));
+		response = dev->Register(request, Convert::ToString(_config->credential.fido2PIN));
 	}
 	catch (FIDOException ex)
 	{
 		EDUMFAError("FIDO2 registration failed: " + std::string(ex.what()));
 		_lastStatus = ex.getErrorCode();
-		if (ex.getErrorCode() == FIDO_ERR_PIN_INVALID)
-		{
-			// Just try again
-		}
-		else if (ex.getErrorCode() == FIDO_ERR_PIN_AUTH_BLOCKED)
-		{
-			// We can not provide for all problems, so just show an info in GetSerialization and continue?
-			//_eduMFASuccess = true;
-			//return S_OK;
-		}
-		else
+		// On a wrong PIN the user just tries again. On a blocked PIN we can not provide for all
+		// problems, so GetSerialization shows an info and the user stays in this mode.
+		if (ex.getErrorCode() != FIDO_ERR_PIN_INVALID && ex.getErrorCode() != FIDO_ERR_PIN_AUTH_BLOCKED)
 		{
 			SetMode(Mode::EDUMFA);
 			_passkeyRegistrationFailed = true;

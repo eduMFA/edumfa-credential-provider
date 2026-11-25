@@ -23,7 +23,7 @@
 #include "Convert.h"
 #include <thread>
 #include <stdexcept>
-#include "FIDODevice.cpp"
+#include "FIDODevice.h"
 
 using namespace std;
 

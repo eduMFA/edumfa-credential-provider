@@ -177,6 +177,8 @@ void CALLBACK WinHttpStatusCallback(
 			EDUMFAError("SECURE_FAILURE with status info: " + strDetail);
 		}
 		break;
+	default:
+		break;
 	}
 }
 

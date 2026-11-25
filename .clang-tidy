@@ -1,0 +1,19 @@
+# Disabled because they flag deliberate style here, not bugs:
+#   easily-swappable-parameters: most Win32-style signatures
+#   assignment-in-if-condition: the `if ((res = fido_...()) != FIDO_OK)` idiom
+#   reserved-identifier: include guards and helpers from Microsoft's credential provider sample
+#   optin.performance.Padding: struct layout
+Checks: >-
+  -*,
+  bugprone-*,
+  clang-analyzer-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-assignment-in-if-condition,
+  -bugprone-reserved-identifier,
+  -clang-analyzer-optin.performance.Padding
+CheckOptions:
+  # Out of memory ends the process either way.
+  bugprone-exception-escape.IgnoredExceptions: 'bad_alloc,bad_array_new_length'
+# The toolchain headers are system headers and skipped anyway. These are the downloaded dependencies.
+HeaderFilterRegex: '.*'
+ExcludeHeaderFilterRegex: 'nlohmann|libfido2'
